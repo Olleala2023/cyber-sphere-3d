@@ -238,10 +238,19 @@
                     <span id="hud-crystals" class="text-sm md:text-xl font-cyber text-yellow-300 neon-text-gold">0</span>
                 </div>
 
-                <button id="btn-music-hud" class="neon-box px-2.5 h-9 md:h-11 rounded-2xl flex items-center justify-center gap-1.5 text-pink-300 hover:text-white hover:border-pink-400 active:scale-95 transition cursor-pointer" title="Переключить музыкальный трек (M)">
-                    <i class="fa-solid fa-music text-xs md:text-sm"></i>
-                    <span id="hud-track-name" class="hidden md:inline text-[10px] font-cyber">ТРЕК 1</span>
-                </button>
+                <!-- Мини-плеер переключения треков в HUD -->
+                <div class="neon-box h-9 md:h-11 px-1.5 rounded-2xl flex items-center gap-1 border-pink-500/50">
+                    <button id="btn-prev-track-hud" class="w-6 h-7 md:w-7 md:h-8 rounded-xl flex items-center justify-center text-pink-300 hover:text-white hover:bg-pink-500/20 active:scale-90 transition cursor-pointer" title="Предыдущий трек ([)">
+                        <i class="fa-solid fa-backward-step text-[10px] md:text-xs"></i>
+                    </button>
+                    <button id="btn-music-hud" class="px-1.5 h-7 md:h-8 rounded-xl flex items-center justify-center gap-1.5 text-pink-300 hover:text-white active:scale-95 transition cursor-pointer" title="Следующий трек (M / N)">
+                        <i class="fa-solid fa-music text-xs animate-pulse"></i>
+                        <span id="hud-track-name" class="text-[9px] md:text-[10px] font-cyber whitespace-nowrap">ТРЕК 1: ЧИЛЛ</span>
+                    </button>
+                    <button id="btn-next-track-hud" class="w-6 h-7 md:w-7 md:h-8 rounded-xl flex items-center justify-center text-pink-300 hover:text-white hover:bg-pink-500/20 active:scale-90 transition cursor-pointer" title="Следующий трек (] / M)">
+                        <i class="fa-solid fa-forward-step text-[10px] md:text-xs"></i>
+                    </button>
+                </div>
 
                 <button id="btn-mute-hud" class="neon-box w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center text-cyan-300 hover:text-white hover:border-cyan-300 active:scale-95 transition cursor-pointer" title="Звук Вкл/Выкл">
                     <i class="fa-solid fa-volume-high text-base md:text-lg"></i>
@@ -284,16 +293,16 @@
             <div class="w-full flex flex-col sm:flex-row justify-between items-center gap-2 border-b border-cyan-500/30 pb-3">
                 <div class="text-center sm:text-left">
                     <div class="inline-block px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[10px] font-bold tracking-widest uppercase">
-                        Версия 2.5 • Виляющая Трасса • Гипер-Драйв
+                        Версия 2.8 • Плеер 5 Треков • Живая Архитектура
                     </div>
                     <h1 class="text-2xl md:text-3xl font-cyber text-white neon-text-cyan tracking-wide mt-0.5">
                         КИБЕР-СФЕРА 3D: НЕОНОВЫЙ РЫВОК
                     </h1>
                 </div>
 
-                <!-- Рекорд, Кристаллы, Музыка и Кнопка Звука -->
-                <div class="flex items-center gap-1.5">
-                    <div class="flex gap-2.5 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700">
+                <!-- Рекорд, Кристаллы, Музыкальный Плеер и Кнопка Звука -->
+                <div class="flex flex-wrap items-center justify-center gap-1.5">
+                    <div class="flex gap-2.5 bg-slate-900/90 px-3 py-1.5 rounded-2xl border border-slate-700">
                         <div class="flex items-center gap-1.5 pr-2.5 border-r border-slate-700">
                             <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
                             <div class="text-left">
@@ -309,10 +318,18 @@
                             </div>
                         </div>
                     </div>
-                    <button id="btn-music-menu" class="neon-box px-3 h-10 rounded-2xl flex items-center justify-center gap-1.5 text-pink-300 hover:text-white transition cursor-pointer" title="Переключить музыкальный трек (track1.mp3, track2.mp3, track3.mp3)">
-                        <i class="fa-solid fa-music text-xs"></i>
-                        <span id="menu-track-name" class="text-[10px] font-cyber">ТРЕК 1</span>
-                    </button>
+                    <div class="neon-box h-10 px-1.5 rounded-2xl flex items-center gap-1 border-pink-500/50">
+                        <button id="btn-prev-track-menu" class="w-7 h-7 rounded-xl flex items-center justify-center text-pink-300 hover:text-white hover:bg-pink-500/25 active:scale-90 transition cursor-pointer" title="Предыдущий трек ([)">
+                            <i class="fa-solid fa-backward-step text-xs"></i>
+                        </button>
+                        <button id="btn-music-menu" class="px-2 h-7 rounded-xl flex items-center justify-center gap-1.5 text-pink-300 hover:text-white transition cursor-pointer" title="Нажми для прослушивания / смены трека (1-5)">
+                            <i class="fa-solid fa-music text-xs"></i>
+                            <span id="menu-track-name" class="text-[10px] font-cyber whitespace-nowrap">ТРЕК 1: ЧИЛЛ</span>
+                        </button>
+                        <button id="btn-next-track-menu" class="w-7 h-7 rounded-xl flex items-center justify-center text-pink-300 hover:text-white hover:bg-pink-500/25 active:scale-90 transition cursor-pointer" title="Следующий трек (] / M)">
+                            <i class="fa-solid fa-forward-step text-xs"></i>
+                        </button>
+                    </div>
                     <button id="btn-mute-menu" class="neon-box w-10 h-10 rounded-2xl flex items-center justify-center text-cyan-300 hover:text-white transition cursor-pointer" title="Звук Вкл/Выкл">
                         <i class="fa-solid fa-volume-high"></i>
                     </button>
@@ -462,7 +479,22 @@
     <div id="pause-modal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm">
         <div class="neon-box max-w-sm w-full rounded-3xl p-6 text-center flex flex-col gap-4">
             <h2 class="text-3xl font-cyber text-white neon-text-cyan">ПАУЗА</h2>
-            <p class="text-sm text-slate-300">Передохни перед следующим неоновым рывком!</p>
+            <p class="text-sm text-slate-300">Передохни или выбери любимый музыкальный трек!</p>
+
+            <!-- Переключатель музыки прямо в меню паузы -->
+            <div class="bg-slate-900/90 border border-pink-500/40 rounded-2xl p-2.5 flex items-center justify-between gap-2">
+                <button id="btn-prev-track-pause" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-pink-500/30 text-pink-300 hover:text-white flex items-center justify-center transition cursor-pointer">
+                    <i class="fa-solid fa-backward-step"></i>
+                </button>
+                <div class="flex flex-col items-center overflow-hidden">
+                    <span class="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Саундтрек (клавиша M)</span>
+                    <span id="pause-track-name" class="text-xs font-cyber text-pink-300 truncate">ТРЕК 1: ЧИЛЛ</span>
+                </div>
+                <button id="btn-next-track-pause" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-pink-500/30 text-pink-300 hover:text-white flex items-center justify-center transition cursor-pointer">
+                    <i class="fa-solid fa-forward-step"></i>
+                </button>
+            </div>
+
             <button id="btn-resume" class="neon-btn py-3.5 rounded-2xl font-cyber text-slate-950 text-lg flex items-center justify-center gap-2 cursor-pointer">
                 <i class="fa-solid fa-play"></i> ПРОДОЛЖИТЬ
             </button>
@@ -564,9 +596,13 @@
                 return this.muted;
             }
 
-            cycleMusicTrack() {
+            cycleMusicTrack(step = 1) {
                 this.init();
-                this.currentTrackIdx = (this.currentTrackIdx + 1) % MUSIC_TRACKS.length;
+                this.currentTrackIdx = (this.currentTrackIdx + step + MUSIC_TRACKS.length) % MUSIC_TRACKS.length;
+                if (typeof playerData !== 'undefined') {
+                    playerData.selectedTrackIdx = this.currentTrackIdx;
+                    saveData();
+                }
                 this.startMusicTrack(this.currentTrackIdx);
                 return MUSIC_TRACKS[this.currentTrackIdx];
             }
@@ -586,9 +622,20 @@
 
                 if (!this.audioElements[track.file]) {
                     const audio = new Audio(track.file);
-                    audio.loop = true;
-                    audio.volume = 0.42;
+                    // Когда трек доигрывает до конца, автоматически включается следующий музыкальный трек (1..5)
+                    audio.loop = false;
+                    audio.volume = 0.45;
                     audio.dataset.failed = 'false';
+                    audio.addEventListener('ended', () => {
+                        if (this.muted) return;
+                        // Переходим к следующему музыкальному треку (пропуская пункт ВЫКЛ)
+                        const activeTracksCount = MUSIC_TRACKS.filter(t => t.file !== null).length;
+                        const nextIdx = (this.currentTrackIdx + 1) % activeTracksCount;
+                        this.startMusicTrack(nextIdx);
+                        if (typeof syncMusicButtons === 'function') {
+                            syncMusicButtons(MUSIC_TRACKS[nextIdx], false);
+                        }
+                    });
                     audio.addEventListener('error', () => {
                         audio.dataset.failed = 'true';
                         if (this.currentTrackIdx === idx && !this.muted) {
@@ -1012,7 +1059,8 @@
             selectedSkin: 'sphere_cyan',
             selectedDifficulty: 'chill',
             selectedStartZone: 0,
-            lockZone: false
+            lockZone: false,
+            selectedTrackIdx: 0
         };
 
         function loadSaveData() {
@@ -1021,6 +1069,9 @@
                 if (raw) {
                     const parsed = JSON.parse(raw);
                     playerData = { ...playerData, ...parsed };
+                }
+                if (typeof playerData.selectedTrackIdx === 'number' && playerData.selectedTrackIdx >= 0 && playerData.selectedTrackIdx < MUSIC_TRACKS.length) {
+                    sound.currentTrackIdx = playerData.selectedTrackIdx;
                 }
             } catch (e) {
                 console.warn('Ошибка чтения сохранения:', e);
@@ -1867,79 +1918,338 @@
         }
 
         const sceneryItems = [];
+        const SCENERY_COUNT = 24;
+        const SCENERY_STEP_Z = 9.5;
+        const SCENERY_LOOP_Z = SCENERY_COUNT * SCENERY_STEP_Z;
 
-        function createBiomeProp(sceneryType, colorHex) {
+        // Создание неоновой арки/портала над трассой (разных форм в зависимости от индекса)
+        function createTrackArchProp(colorHex, archVariant = 0) {
+            const archGroup = new THREE.Group();
+            const pillarMat = new THREE.MeshStandardMaterial({ color: 0x090e22, roughness: 0.3, metalness: 0.7 });
+            const neonMat = new THREE.MeshBasicMaterial({ color: colorHex });
+
+            if (archVariant % 2 === 0) {
+                // П-образный широкий кибер-портал с наклонными стойками
+                const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(0.55, 8.5, 0.55), pillarMat);
+                leftPillar.position.set(-6.6, 4.0, 0);
+                leftPillar.rotation.z = -0.08;
+                const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(0.55, 8.5, 0.55), pillarMat);
+                rightPillar.position.set(6.6, 4.0, 0);
+                rightPillar.rotation.z = 0.08;
+
+                const topBeam = new THREE.Mesh(new THREE.BoxGeometry(14.2, 0.55, 0.65), pillarMat);
+                topBeam.position.set(0, 8.2, 0);
+
+                const neonStripTop = new THREE.Mesh(new THREE.BoxGeometry(13.6, 0.18, 0.72), neonMat);
+                neonStripTop.position.set(0, 7.95, 0);
+
+                const neonLeft = new THREE.Mesh(new THREE.BoxGeometry(0.18, 7.8, 0.62), neonMat);
+                neonLeft.position.set(-6.3, 4.0, 0);
+                neonLeft.rotation.z = -0.08;
+
+                const neonRight = new THREE.Mesh(new THREE.BoxGeometry(0.18, 7.8, 0.62), neonMat);
+                neonRight.position.set(6.3, 4.0, 0);
+                neonRight.rotation.z = 0.08;
+
+                archGroup.add(leftPillar, rightPillar, topBeam, neonStripTop, neonLeft, neonRight);
+            } else {
+                // Футуристическая полукруглая неоновая арка-кольцо над дорогой
+                const torusArch = new THREE.Mesh(
+                    new THREE.TorusGeometry(6.8, 0.16, 8, 24, Math.PI),
+                    neonMat
+                );
+                torusArch.position.set(0, 0.2, 0);
+                archGroup.add(torusArch);
+
+                const baseL = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.65, 2.2, 6), pillarMat);
+                baseL.position.set(-6.8, 1.0, 0);
+                const baseR = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.65, 2.2, 6), pillarMat);
+                baseR.position.set(6.8, 1.0, 0);
+                archGroup.add(baseL, baseR);
+            }
+
+            return archGroup;
+        }
+
+        // Генератор элементов вдоль стен трассы — 4 разные формы и разные размеры для каждого из 6 миров!
+        function createBiomeProp(sceneryType, colorHex, variantIndex = 0, side = 1) {
             const propGroup = new THREE.Group();
+            const v = variantIndex % 4;
 
             if (sceneryType === 'city') {
-                const h = 14 + Math.random() * 14;
-                const boxGeo = new THREE.BoxGeometry(2.4, h, 2.4);
-                const box = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0x070b1a, roughness: 0.3 }));
-                box.position.y = h / 2 - 3;
-                propGroup.add(box);
+                const darkMat = new THREE.MeshStandardMaterial({ color: 0x070b1a, roughness: 0.28, metalness: 0.6 });
+                const edgeMat = new THREE.LineBasicMaterial({ color: colorHex });
+                const glowMat = new THREE.MeshBasicMaterial({ color: colorHex });
+                const altGlowMat = new THREE.MeshBasicMaterial({ color: 0xff00a0 });
 
-                const edges = new THREE.LineSegments(
-                    new THREE.EdgesGeometry(boxGeo),
-                    new THREE.LineBasicMaterial({ color: colorHex })
-                );
-                edges.position.y = h / 2 - 3;
-                propGroup.add(edges);
+                if (v === 0) {
+                    // Вариант 1: Высокий ступенчатый небоскрёб со шпилем и маяком
+                    const h1 = 10 + Math.random() * 6;
+                    const h2 = 7 + Math.random() * 6;
+                    const b1Geo = new THREE.BoxGeometry(3.2, h1, 3.2);
+                    const b1 = new THREE.Mesh(b1Geo, darkMat);
+                    b1.position.y = h1 / 2 - 3;
+                    const e1 = new THREE.LineSegments(new THREE.EdgesGeometry(b1Geo), edgeMat);
+                    e1.position.copy(b1.position);
+
+                    const b2Geo = new THREE.BoxGeometry(2.0, h2, 2.0);
+                    const b2 = new THREE.Mesh(b2Geo, darkMat);
+                    b2.position.y = h1 - 3 + h2 / 2;
+                    const e2 = new THREE.LineSegments(new THREE.EdgesGeometry(b2Geo), edgeMat);
+                    e2.position.copy(b2.position);
+
+                    const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.18, 4.5, 6), glowMat);
+                    spire.position.y = h1 + h2 - 3 + 2.2;
+                    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), altGlowMat);
+                    beacon.position.y = h1 + h2 - 3 + 4.5;
+
+                    propGroup.add(b1, e1, b2, e2, spire, beacon);
+                } else if (v === 1) {
+                    // Вариант 2: Широкий корпус с неоновыми полосами-этажами и голографическим щитом
+                    const w = 3.4 + Math.random() * 1.4;
+                    const h = 11 + Math.random() * 8;
+                    const d = 2.2 + Math.random() * 1.2;
+                    const boxGeo = new THREE.BoxGeometry(w, h, d);
+                    const box = new THREE.Mesh(boxGeo, darkMat);
+                    box.position.y = h / 2 - 3;
+                    const edges = new THREE.LineSegments(new THREE.EdgesGeometry(boxGeo), edgeMat);
+                    edges.position.copy(box.position);
+                    propGroup.add(box, edges);
+
+                    // Светящиеся горизонтальные окна-полосы
+                    for (let f = 2; f < h - 2; f += 2.6) {
+                        const winStrip = new THREE.Mesh(
+                            new THREE.BoxGeometry(w + 0.08, 0.22, d + 0.08),
+                            f % 5 < 2.5 ? glowMat : altGlowMat
+                        );
+                        winStrip.position.y = f - 2.5;
+                        propGroup.add(winStrip);
+                    }
+                } else if (v === 2) {
+                    // Вариант 3: Шестигранная кибер-башня с парящими энергетическими кольцами
+                    const h = 14 + Math.random() * 10;
+                    const hexGeo = new THREE.CylinderGeometry(1.6, 2.1, h, 6);
+                    const hexTower = new THREE.Mesh(hexGeo, darkMat);
+                    hexTower.position.y = h / 2 - 3;
+                    const hexEdges = new THREE.LineSegments(new THREE.EdgesGeometry(hexGeo), edgeMat);
+                    hexEdges.position.copy(hexTower.position);
+                    propGroup.add(hexTower, hexEdges);
+
+                    for (let r = 0; r < 2; r++) {
+                        const ring = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.1, 8, 18), r === 0 ? glowMat : altGlowMat);
+                        ring.rotation.x = Math.PI / 2;
+                        ring.position.y = 3.5 + r * 4.5;
+                        propGroup.add(ring);
+                    }
+                } else {
+                    // Вариант 4: Наклонный монолит-клин с прожектором в сторону трассы
+                    const h = 12 + Math.random() * 8;
+                    const monoGeo = new THREE.BoxGeometry(1.8, h, 3.6);
+                    const mono = new THREE.Mesh(monoGeo, darkMat);
+                    mono.position.y = h / 2 - 2.5;
+                    mono.rotation.z = -side * 0.16;
+                    const monoEdges = new THREE.LineSegments(new THREE.EdgesGeometry(monoGeo), edgeMat);
+                    monoEdges.position.copy(mono.position);
+                    monoEdges.rotation.copy(mono.rotation);
+
+                    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.15, 3.8, 2.4), altGlowMat);
+                    screen.position.set(-side * 1.1, 4.5, 0);
+                    screen.rotation.z = -side * 0.16;
+                    propGroup.add(mono, monoEdges, screen);
+                }
 
             } else if (sceneryType === 'jungle') {
-                const trunkGeo = new THREE.CylinderGeometry(0.35, 0.6, 8, 6);
-                const trunk = new THREE.Mesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x0c2818 }));
-                trunk.position.y = 2;
-                propGroup.add(trunk);
+                if (v === 0) {
+                    // Многоярусное неоновое дерево разной высоты
+                    const scaleH = 0.8 + Math.random() * 0.65;
+                    const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.65, 8 * scaleH, 6), new THREE.MeshStandardMaterial({ color: 0x0c2818 }));
+                    trunk.position.y = 2 * scaleH;
+                    propGroup.add(trunk);
 
-                for (let layer = 0; layer < 3; layer++) {
-                    const canopyGeo = new THREE.ConeGeometry(2.8 - layer * 0.6, 3.2, 6);
-                    const canopyMat = new THREE.MeshStandardMaterial({
-                        color: 0x00ff66,
-                        emissive: 0x005522,
-                        wireframe: layer === 1,
-                        flatShading: true
-                    });
-                    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
-                    canopy.position.y = 5.5 + layer * 2.1;
-                    propGroup.add(canopy);
+                    for (let layer = 0; layer < 3; layer++) {
+                        const canopyGeo = new THREE.ConeGeometry((3.0 - layer * 0.6) * (0.85 + Math.random() * 0.3), 3.4 * scaleH, 6);
+                        const canopyMat = new THREE.MeshStandardMaterial({
+                            color: 0x00ff66,
+                            emissive: 0x005522,
+                            wireframe: layer === 1,
+                            flatShading: true
+                        });
+                        const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+                        canopy.position.y = (5.2 + layer * 2.2) * scaleH;
+                        propGroup.add(canopy);
+                    }
+                } else if (v === 1) {
+                    // Гигантский биолюминесцентный кибер-гриб
+                    const stemH = 5.5 + Math.random() * 4.5;
+                    const stem = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.45, 0.75, stemH, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x103828, emissive: 0x003318 })
+                    );
+                    stem.position.y = stemH / 2 - 1;
+                    const capRadius = 2.4 + Math.random() * 1.4;
+                    const cap = new THREE.Mesh(
+                        new THREE.ConeGeometry(capRadius, 2.6, 10),
+                        new THREE.MeshStandardMaterial({ color: 0x00ffaa, emissive: 0x008844, flatShading: true })
+                    );
+                    cap.position.y = stemH - 0.5;
+                    const sporeRing = new THREE.Mesh(
+                        new THREE.TorusGeometry(capRadius * 0.75, 0.08, 6, 16),
+                        new THREE.MeshBasicMaterial({ color: 0xadff2f })
+                    );
+                    sporeRing.rotation.x = Math.PI / 2;
+                    sporeRing.position.y = stemH - 1.6;
+                    propGroup.add(stem, cap, sporeRing);
+                } else if (v === 2) {
+                    // Роща светящихся стеблей кибер-бамбука разной высоты и наклона
+                    for (let b = 0; b < 4; b++) {
+                        const bh = 7 + Math.random() * 8;
+                        const stalk = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.28, 0.34, bh, 6),
+                            new THREE.MeshStandardMaterial({ color: 0x00ee55, emissive: 0x004411, flatShading: true })
+                        );
+                        stalk.position.set((b - 1.5) * 0.9, bh / 2 - 2, (Math.random() - 0.5) * 1.4);
+                        stalk.rotation.z = (Math.random() - 0.5) * 0.22;
+                        propGroup.add(stalk);
+                    }
+                } else {
+                    // Парящий био-кристалл в кольцах лиан
+                    const core = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(1.6, 0),
+                        new THREE.MeshStandardMaterial({ color: 0x55ff00, emissive: 0x116600, flatShading: true })
+                    );
+                    core.position.y = 5.5;
+                    const vineRing = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.3, 0.14, 7, 18),
+                        new THREE.MeshBasicMaterial({ color: 0x00ff66, wireframe: true })
+                    );
+                    vineRing.position.y = 5.5;
+                    propGroup.add(core, vineRing);
+                    propGroup.userData.spin = true;
                 }
 
             } else if (sceneryType === 'cave') {
-                for (let c = 0; c < 3; c++) {
-                    const h = 6 + Math.random() * 9;
-                    const crysGeo = new THREE.ConeGeometry(1.1, h, 5);
-                    const crysMat = new THREE.MeshStandardMaterial({
-                        color: 0xd900ff,
-                        emissive: 0x550088,
-                        roughness: 0.15,
-                        flatShading: true
-                    });
-                    const crys = new THREE.Mesh(crysGeo, crysMat);
-                    crys.position.set((c - 1) * 1.1, h / 2 - 2, (Math.random() - 0.5) * 1.5);
-                    crys.rotation.z = (Math.random() - 0.5) * 0.45;
-                    propGroup.add(crys);
+                const colors = [0xd900ff, 0x00f3ff, 0xff00a0];
+                if (v === 0) {
+                    // Крупная друза кристаллов разной высоты и толщины
+                    const count = 3 + Math.floor(Math.random() * 3);
+                    for (let c = 0; c < count; c++) {
+                        const h = 5 + Math.random() * 11;
+                        const r = 0.7 + Math.random() * 0.8;
+                        const col = colors[c % colors.length];
+                        const crys = new THREE.Mesh(
+                            new THREE.ConeGeometry(r, h, 5),
+                            new THREE.MeshStandardMaterial({ color: col, emissive: col, emissiveIntensity: 0.35, roughness: 0.15, flatShading: true })
+                        );
+                        crys.position.set((c - (count - 1) / 2) * 1.1, h / 2 - 2, (Math.random() - 0.5) * 1.6);
+                        crys.rotation.z = (Math.random() - 0.5) * 0.55;
+                        crys.rotation.x = (Math.random() - 0.5) * 0.35;
+                        propGroup.add(crys);
+                    }
+                } else if (v === 1) {
+                    // Парящий двойной кристалл-монолит с кольцом
+                    const gem = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(1.9, 0),
+                        new THREE.MeshStandardMaterial({ color: 0xe040fb, emissive: 0x6a0080, roughness: 0.1, flatShading: true })
+                    );
+                    gem.scale.set(1, 2.3, 1);
+                    gem.position.y = 6.0;
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.4, 0.1, 8, 20),
+                        new THREE.MeshBasicMaterial({ color: 0x00f3ff })
+                    );
+                    ring.rotation.x = Math.PI / 2;
+                    ring.position.y = 6.0;
+                    propGroup.add(gem, ring);
+                    propGroup.userData.spin = true;
+                } else if (v === 2) {
+                    // Высокая кристальная колонна-обелиск
+                    const h = 13 + Math.random() * 7;
+                    const pillar = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.6, 1.8, h, 5),
+                        new THREE.MeshStandardMaterial({ color: 0x9900ff, emissive: 0x330066, flatShading: true })
+                    );
+                    pillar.position.y = h / 2 - 2.5;
+                    pillar.rotation.z = -side * 0.18;
+                    propGroup.add(pillar);
+                } else {
+                    // Геода-сфера из многогранника с ярким свечением
+                    const geode = new THREE.Mesh(
+                        new THREE.DodecahedronGeometry(2.3, 0),
+                        new THREE.MeshStandardMaterial({ color: 0xb300ff, emissive: 0x440077, wireframe: false, flatShading: true })
+                    );
+                    geode.position.y = 3.5;
+                    const wire = new THREE.Mesh(
+                        new THREE.DodecahedronGeometry(2.55, 0),
+                        new THREE.MeshBasicMaterial({ color: 0xff66ff, wireframe: true })
+                    );
+                    wire.position.y = 3.5;
+                    propGroup.add(geode, wire);
+                    propGroup.userData.spin = true;
                 }
 
             } else if (sceneryType === 'magma') {
-                const spireGeo = new THREE.ConeGeometry(2.2, 16, 4);
-                const spire = new THREE.Mesh(spireGeo, new THREE.MeshStandardMaterial({
-                    color: 0x1a0500,
-                    emissive: 0x661100,
-                    flatShading: true
-                }));
-                spire.position.y = 5;
-                propGroup.add(spire);
-
-                const lavaRing = new THREE.Mesh(
-                    new THREE.TorusGeometry(2.0, 0.15, 8, 16),
-                    new THREE.MeshBasicMaterial({ color: 0xff4500 })
-                );
-                lavaRing.rotation.x = Math.PI / 2;
-                lavaRing.position.y = 3.5;
-                propGroup.add(lavaRing);
+                if (v === 0) {
+                    // Вулканический пик с кольцами лавы
+                    const h = 13 + Math.random() * 8;
+                    const spire = new THREE.Mesh(
+                        new THREE.ConeGeometry(2.0 + Math.random() * 0.9, h, 4),
+                        new THREE.MeshStandardMaterial({ color: 0x1a0500, emissive: 0x661100, flatShading: true })
+                    );
+                    spire.position.y = h / 2 - 2.5;
+                    const lavaRing = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.1, 0.16, 8, 16),
+                        new THREE.MeshBasicMaterial({ color: 0xff4500 })
+                    );
+                    lavaRing.rotation.x = Math.PI / 2;
+                    lavaRing.position.y = 4.0;
+                    propGroup.add(spire, lavaRing);
+                } else if (v === 1) {
+                    // Индустриальная магма-башня / реакторный цилиндр
+                    const h = 11 + Math.random() * 6;
+                    const cyl = new THREE.Mesh(
+                        new THREE.CylinderGeometry(1.6, 2.0, h, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x220800, roughness: 0.4 })
+                    );
+                    cyl.position.y = h / 2 - 2;
+                    propGroup.add(cyl);
+                    for (let r = 0; r < 3; r++) {
+                        const band = new THREE.Mesh(
+                            new THREE.TorusGeometry(1.85, 0.12, 6, 16),
+                            new THREE.MeshBasicMaterial({ color: r % 2 === 0 ? 0xff5500 : 0xffaa00 })
+                        );
+                        band.rotation.x = Math.PI / 2;
+                        band.position.y = 1.5 + r * 3.0;
+                        propGroup.add(band);
+                    }
+                } else if (v === 2) {
+                    // Вращающееся огненное ядро-турбина
+                    const core = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(1.7, 1),
+                        new THREE.MeshStandardMaterial({ color: 0xff3300, emissive: 0xcc2200, flatShading: true })
+                    );
+                    core.position.y = 5.5;
+                    const outer = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.5, 0.14, 8, 18),
+                        new THREE.MeshBasicMaterial({ color: 0xffaa00, wireframe: true })
+                    );
+                    outer.position.y = 5.5;
+                    propGroup.add(core, outer);
+                    propGroup.userData.spin = true;
+                } else {
+                    // Зубчатые базальтовые монолиты
+                    for (let k = 0; k < 3; k++) {
+                        const bh = 6 + k * 3.5;
+                        const slab = new THREE.Mesh(
+                            new THREE.BoxGeometry(1.2, bh, 1.8),
+                            new THREE.MeshStandardMaterial({ color: 0x180400, emissive: 0x440900 })
+                        );
+                        slab.position.set((k - 1) * 1.3, bh / 2 - 2, 0);
+                        slab.rotation.z = -side * (0.1 + k * 0.06);
+                        propGroup.add(slab);
+                    }
+                }
 
             } else if (sceneryType === 'arctic') {
-                const iceGeo = new THREE.OctahedronGeometry(2.8, 0);
                 const iceMat = new THREE.MeshStandardMaterial({
                     color: 0x88ffff,
                     emissive: 0x005577,
@@ -1947,27 +2257,105 @@
                     metalness: 0.3,
                     flatShading: true
                 });
-                const ice = new THREE.Mesh(iceGeo, iceMat);
-                ice.scale.set(1, 2.8, 1);
-                ice.position.y = 4;
-                propGroup.add(ice);
+                if (v === 0) {
+                    // Высокий кристалл-айсберг
+                    const sy = 2.2 + Math.random() * 1.4;
+                    const ice = new THREE.Mesh(new THREE.OctahedronGeometry(2.6, 0), iceMat);
+                    ice.scale.set(0.9 + Math.random() * 0.4, sy, 0.9 + Math.random() * 0.4);
+                    ice.position.y = 3.8;
+                    propGroup.add(ice);
+                } else if (v === 1) {
+                    // Вращающаяся 3D-снежинка / полярная звезда
+                    const starGroup = new THREE.Group();
+                    for (let a = 0; a < 3; a++) {
+                        const bar = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.45, 0.45), iceMat);
+                        bar.rotation.z = (a * Math.PI) / 3;
+                        starGroup.add(bar);
+                    }
+                    starGroup.position.y = 6.0;
+                    propGroup.add(starGroup);
+                    propGroup.userData.spin = true;
+                } else if (v === 2) {
+                    // Каскад ледяных пиков разной высоты
+                    for (let p = 0; p < 3; p++) {
+                        const ph = 6 + Math.random() * 8;
+                        const spike = new THREE.Mesh(new THREE.ConeGeometry(1.2, ph, 4), iceMat);
+                        spike.position.set((p - 1) * 1.3, ph / 2 - 2, (Math.random() - 0.5) * 1.2);
+                        spike.rotation.z = (Math.random() - 0.5) * 0.3;
+                        propGroup.add(spike);
+                    }
+                } else {
+                    // Полярный маяк с кольцом северного сияния
+                    const tower = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.4, 12, 6), iceMat);
+                    tower.position.y = 4.0;
+                    const halo = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.0, 0.12, 8, 20),
+                        new THREE.MeshBasicMaterial({ color: 0x00ffcc })
+                    );
+                    halo.rotation.x = Math.PI / 2;
+                    halo.position.y = 9.5;
+                    propGroup.add(tower, halo);
+                }
 
             } else {
-                const ring = new THREE.Mesh(
-                    new THREE.TorusGeometry(2.4, 0.12, 10, 24),
-                    new THREE.MeshBasicMaterial({ color: colorHex, wireframe: true })
-                );
-                ring.position.y = 6;
-                propGroup.add(ring);
-
-                const cube = new THREE.Mesh(
-                    new THREE.OctahedronGeometry(1.4, 0),
-                    new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0x883300, flatShading: true })
-                );
-                cube.position.y = 6;
-                propGroup.add(cube);
-                propGroup.userData.spin = true;
+                // Квантовый космос (void) — 4 разных космических объекта
+                if (v === 0) {
+                    const ring = new THREE.Mesh(
+                        new THREE.TorusGeometry(2.5, 0.12, 10, 24),
+                        new THREE.MeshBasicMaterial({ color: colorHex, wireframe: true })
+                    );
+                    ring.position.y = 6;
+                    const cube = new THREE.Mesh(
+                        new THREE.OctahedronGeometry(1.4, 0),
+                        new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0x883300, flatShading: true })
+                    );
+                    cube.position.y = 6;
+                    propGroup.add(ring, cube);
+                    propGroup.userData.spin = true;
+                } else if (v === 1) {
+                    // Гиперкуб (Тессеракт)
+                    const outerBox = new THREE.Mesh(
+                        new THREE.BoxGeometry(3.2, 3.2, 3.2),
+                        new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true })
+                    );
+                    outerBox.position.y = 6.2;
+                    const innerBox = new THREE.Mesh(
+                        new THREE.BoxGeometry(1.6, 1.6, 1.6),
+                        new THREE.MeshStandardMaterial({ color: 0xff00a0, emissive: 0x880044 })
+                    );
+                    innerBox.position.y = 6.2;
+                    propGroup.add(outerBox, innerBox);
+                    propGroup.userData.spin = true;
+                } else if (v === 2) {
+                    // Высокий квантовый шпиль-антенна
+                    const h = 14 + Math.random() * 8;
+                    const spire = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.2, 1.2, h, 5),
+                        new THREE.MeshStandardMaterial({ color: 0x12062c, emissive: 0x440088, flatShading: true })
+                    );
+                    spire.position.y = h / 2 - 2;
+                    const orb = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.85, 10, 10),
+                        new THREE.MeshBasicMaterial({ color: 0xffdd00, wireframe: true })
+                    );
+                    orb.position.y = h - 1.2;
+                    propGroup.add(spire, orb);
+                } else {
+                    // Двойная кольцевая станция
+                    const r1 = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.1, 8, 20), new THREE.MeshBasicMaterial({ color: 0xffcc00 }));
+                    const r2 = new THREE.Mesh(new THREE.TorusGeometry(1.9, 0.1, 8, 20), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
+                    r1.position.y = 6.5;
+                    r2.position.y = 6.5;
+                    r2.rotation.y = Math.PI / 2;
+                    propGroup.add(r1, r2);
+                    propGroup.userData.spin = true;
+                }
             }
+
+            // Индивидуальная вариация размера для каждого объекта вдоль стены
+            const scaleXZ = 0.78 + Math.random() * 0.55;
+            const scaleY = 0.75 + Math.random() * 0.65;
+            propGroup.scale.set(scaleXZ, scaleY, scaleXZ);
 
             return propGroup;
         }
@@ -1980,11 +2368,22 @@
             sceneryItems.length = 0;
 
             const zone = ZONES[zoneIdx % ZONES.length];
-            for (let i = 0; i < 16; i++) {
-                const prop = createBiomeProp(zone.sceneryType, zone.gridColor);
+            for (let i = 0; i < SCENERY_COUNT; i++) {
                 const side = i % 2 === 0 ? -1 : 1;
-                const baseX = side * (10.5 + Math.random() * 5);
-                const z = -i * 14;
+                const z = -i * SCENERY_STEP_Z;
+
+                // Каждые 6 сегментов ставим эффектную неоновую арку над самой трассой
+                if (i % 6 === 3) {
+                    const arch = createTrackArchProp(zone.gridColor, Math.floor(i / 6));
+                    arch.userData.baseX = 0;
+                    arch.userData.isArch = true;
+                    arch.position.set(getTrackCurveX(z), getTrackCurveY(z), z);
+                    scene.add(arch);
+                    sceneryItems.push(arch);
+                }
+
+                const prop = createBiomeProp(zone.sceneryType, zone.gridColor, i, side);
+                const baseX = side * (9.8 + Math.random() * 6.5);
                 prop.userData.baseX = baseX;
                 prop.position.set(baseX + getTrackCurveX(z), getTrackCurveY(z), z);
                 scene.add(prop);
@@ -2266,22 +2665,30 @@
             const group = new THREE.Group();
 
             if (type === 'low_laser') {
-                const barGeo = new THREE.BoxGeometry(2.5, 0.85, 0.45);
+                const barGeo = new THREE.BoxGeometry(2.3, 0.42, 0.35);
                 const barMat = new THREE.MeshStandardMaterial({
                     color: 0xff0055,
                     emissive: 0xff0044,
-                    emissiveIntensity: 0.9,
+                    emissiveIntensity: 0.95,
                     roughness: 0.2
                 });
                 const bar = new THREE.Mesh(barGeo, barMat);
-                bar.position.y = 0.5;
+                bar.position.y = 0.58;
                 group.add(bar);
+
+                // Боковые генераторы-стойки лазерного барьера
+                const postMat = new THREE.MeshStandardMaterial({ color: 0x161b33, roughness: 0.3, metalness: 0.7 });
+                const postL = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 1.0, 8), postMat);
+                postL.position.set(-1.18, 0.5, 0);
+                const postR = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.28, 1.0, 8), postMat);
+                postR.position.set(1.18, 0.5, 0);
+                group.add(postL, postR);
 
                 const edges = new THREE.LineSegments(
                     new THREE.EdgesGeometry(barGeo),
                     new THREE.LineBasicMaterial({ color: 0xffffff })
                 );
-                edges.position.y = 0.5;
+                edges.position.y = 0.58;
                 group.add(edges);
 
                 group.position.set(xPos + getTrackCurveX(zPos), getTrackCurveY(zPos), zPos);
@@ -2290,14 +2697,22 @@
             } else if (type === 'high_block') {
                 const blockGeo = new THREE.BoxGeometry(2.4, 3.8, 1.3);
                 const blockMat = new THREE.MeshStandardMaterial({
-                    color: 0x1a103c,
-                    emissive: 0x8800ff,
-                    emissiveIntensity: 0.55,
-                    roughness: 0.3
+                    color: 0x160d33,
+                    emissive: 0x6600cc,
+                    emissiveIntensity: 0.5,
+                    roughness: 0.28
                 });
                 const block = new THREE.Mesh(blockGeo, blockMat);
                 block.position.y = 1.9;
                 group.add(block);
+
+                // Светящиеся неоновые полосы безопасности на фасаде блока
+                const stripeMat = new THREE.MeshBasicMaterial({ color: 0xff00a0 });
+                const s1 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 1.34), stripeMat);
+                s1.position.y = 1.2;
+                const s2 = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.22, 1.34), stripeMat);
+                s2.position.y = 2.6;
+                group.add(s1, s2);
 
                 const edges = new THREE.LineSegments(
                     new THREE.EdgesGeometry(blockGeo),
@@ -2666,9 +3081,14 @@
                 else if (gameState.status === 'PAUSED') resumeGame();
                 return;
             }
-            if (e.code === 'KeyM') {
-                const tr = sound.cycleMusicTrack();
-                syncMusicButtons(tr);
+            if (e.code === 'KeyM' || e.code === 'KeyN' || e.code === 'BracketRight') {
+                const tr = sound.cycleMusicTrack(1);
+                syncMusicButtons(tr, true);
+                return;
+            }
+            if (e.code === 'BracketLeft') {
+                const tr = sound.cycleMusicTrack(-1);
+                syncMusicButtons(tr, true);
                 return;
             }
             if (gameState.status !== 'PLAYING') return;
@@ -2801,6 +3221,7 @@
             if (gameState.status !== 'PLAYING') return;
             gameState.status = 'PAUSED';
             if (sound.activeAudio) sound.activeAudio.pause();
+            syncMusicButtons(MUSIC_TRACKS[sound.currentTrackIdx], false);
             document.getElementById('pause-modal').classList.remove('hidden');
         }
 
@@ -2845,6 +3266,7 @@
         function updateMenuUI() {
             document.getElementById('menu-highscore').innerText = playerData.highScore;
             document.getElementById('menu-crystals').innerText = playerData.crystals;
+            syncMusicButtons(MUSIC_TRACKS[sound.currentTrackIdx], false);
 
             const skin = SKINS.find(s => s.id === playerData.selectedSkin) || SKINS[0];
             document.getElementById('menu-skin-name').innerText = skin.name;
@@ -3101,23 +3523,45 @@
             document.querySelector('#btn-mute-menu i').className = cls;
         }
 
-        function syncMusicButtons(trackObj) {
+        function syncMusicButtons(trackObj, showToast = true) {
             if (!trackObj) return;
             const hudTxt = document.getElementById('hud-track-name');
             const menuTxt = document.getElementById('menu-track-name');
-            const shortLabel = trackObj.file ? `ТРЕК ${trackObj.id + 1}` : 'МУЗ ВЫКЛ';
-            if (hudTxt) hudTxt.innerText = shortLabel;
-            if (menuTxt) menuTxt.innerText = shortLabel;
-            if (gameState.status === 'PLAYING') {
+            const pauseTxt = document.getElementById('pause-track-name');
+            const fullLabel = trackObj.name;
+            if (hudTxt) hudTxt.innerText = fullLabel;
+            if (menuTxt) menuTxt.innerText = fullLabel;
+            if (pauseTxt) pauseTxt.innerText = fullLabel;
+            if (showToast) {
                 createFloatingText(`🎵 ${trackObj.name}`, 'text-pink-300');
             }
         }
 
+        document.getElementById('btn-prev-track-hud').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack(-1), true);
+        });
         document.getElementById('btn-music-hud').addEventListener('click', () => {
-            syncMusicButtons(sound.cycleMusicTrack());
+            syncMusicButtons(sound.cycleMusicTrack(1), true);
+        });
+        document.getElementById('btn-next-track-hud').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack(1), true);
+        });
+
+        document.getElementById('btn-prev-track-menu').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack(-1), true);
         });
         document.getElementById('btn-music-menu').addEventListener('click', () => {
-            syncMusicButtons(sound.cycleMusicTrack());
+            syncMusicButtons(sound.cycleMusicTrack(1), true);
+        });
+        document.getElementById('btn-next-track-menu').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack(1), true);
+        });
+
+        document.getElementById('btn-prev-track-pause').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack(-1), true);
+        });
+        document.getElementById('btn-next-track-pause').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack(1), true);
         });
 
         document.getElementById('btn-mute-hud').addEventListener('click', () => {
@@ -3185,9 +3629,15 @@
                 updateWindingTrackGeometry(14, dt);
                 sceneryItems.forEach(item => {
                     item.position.z += 12 * dt;
-                    if (item.position.z > 16) item.position.z -= 16 * 14;
-                    item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                    if (item.userData.spin) item.rotation.y += dt * 1.2;
+                    if (item.position.z > 16) item.position.z -= SCENERY_LOOP_Z;
+                    const cx = getTrackCurveX(item.position.z);
+                    item.position.x = item.userData.baseX + cx;
                     item.position.y = getTrackCurveY(item.position.z);
+                    if (item.userData.isArch) {
+                        const nextCx = getTrackCurveX(item.position.z - 4.0);
+                        item.rotation.y = Math.atan2(nextCx - cx, -4.0);
+                    }
                 });
                 updateParticles(dt);
                 return;
@@ -3328,9 +3778,14 @@
             sceneryItems.forEach(item => {
                 item.position.z += effectiveSpeed * dt;
                 if (item.userData.spin) item.rotation.y += dt * 1.5;
-                if (item.position.z > 16) item.position.z -= 16 * 14;
-                item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                if (item.position.z > 16) item.position.z -= SCENERY_LOOP_Z;
+                const cx = getTrackCurveX(item.position.z);
+                item.position.x = item.userData.baseX + cx;
                 item.position.y = getTrackCurveY(item.position.z);
+                if (item.userData.isArch) {
+                    const nextCx = getTrackCurveX(item.position.z - 4.0);
+                    item.rotation.y = Math.atan2(nextCx - cx, -4.0);
+                }
             });
 
             gameState.nextSpawnZ += effectiveSpeed * dt;
