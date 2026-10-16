@@ -1,0 +1,3559 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Кибер-Сфера 3D: Неоновый Рывок (Версия 2.0)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js r128 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Russo One & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #050510;
+            font-family: 'Inter', sans-serif;
+        }
+        .font-cyber {
+            font-family: 'Russo One', sans-serif;
+            letter-spacing: 0.7px;
+        }
+        #game-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        /* Неоновые блоки и кнопки */
+        .neon-box {
+            background: rgba(9, 12, 28, 0.88);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(0, 243, 255, 0.45);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.18), inset 0 0 15px rgba(0, 243, 255, 0.08);
+        }
+        .neon-btn {
+            background: linear-gradient(135deg, #00f3ff 0%, #0066ff 100%);
+            box-shadow: 0 0 18px rgba(0, 243, 255, 0.55);
+            transition: all 0.15s ease;
+        }
+        .neon-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 28px rgba(0, 243, 255, 0.9);
+        }
+        .neon-btn:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        .neon-btn-pink {
+            background: linear-gradient(135deg, #ff00a0 0%, #7a00ff 100%);
+            box-shadow: 0 0 18px rgba(255, 0, 160, 0.55);
+        }
+        .neon-btn-pink:hover {
+            box-shadow: 0 0 28px rgba(255, 0, 160, 0.9);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.8), 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(255, 0, 160, 0.8), 0 0 20px rgba(255, 0, 160, 0.4);
+        }
+        .neon-text-gold {
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
+        }
+
+        /* Всплывающие уведомления (+очки, комбо, бонусы) */
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            35% { opacity: 1; transform: translateY(-28px) scale(1.15); }
+            100% { opacity: 0; transform: translateY(-70px) scale(0.95); }
+        }
+        .floating-msg {
+            position: absolute;
+            pointer-events: none;
+            animation: floatUp 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            z-index: 30;
+        }
+
+        /* Баннер смены мира */
+        @keyframes zoneBanner {
+            0% { transform: translate(-50%, -150%) scale(0.5); opacity: 0; }
+            16% { transform: translate(-50%, 0) scale(1.06); opacity: 1; }
+            26% { transform: translate(-50%, 0) scale(1.0); opacity: 1; }
+            84% { transform: translate(-50%, 0) scale(1.0); opacity: 1; }
+            100% { transform: translate(-50%, -150%) scale(0.8); opacity: 0; }
+        }
+        .zone-banner-anim {
+            animation: zoneBanner 3.4s ease-in-out forwards;
+        }
+
+        /* Пульсация сердец */
+        @keyframes heartBeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.22); }
+        }
+        .heart-pulse {
+            animation: heartBeat 1.2s infinite ease-in-out;
+        }
+
+        /* Полоса прокрутки */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.35);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #00f3ff;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-white select-none overflow-hidden">
+
+    <!-- 3D Сцена игры -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- Контейнер для всплывающих цифр и текста -->
+    <div id="floating-container" class="absolute inset-0 pointer-events-none z-20 overflow-hidden"></div>
+
+    <!-- Баннер перехода в новый мир -->
+    <div id="zone-banner" class="hidden absolute top-28 left-1/2 -translate-x-1/2 z-30 pointer-events-none text-center w-11/12 max-w-md">
+        <div class="neon-box px-6 py-3.5 rounded-2xl border-2 border-pink-500 shadow-2xl">
+            <div id="zone-banner-sub" class="text-xs uppercase tracking-widest text-yellow-300 font-bold mb-0.5">★ БОНУС +30 КРИСТАЛЛОВ ★</div>
+            <div id="zone-banner-title" class="text-xl md:text-2xl font-cyber text-white neon-text-pink">УРОВЕНЬ 2: КИБЕР-ДЖУНГЛИ</div>
+        </div>
+    </div>
+
+    <!-- ВЕРХНИЙ ИГРОВОЙ ИНТЕРФЕЙС (HUD) -->
+    <div id="hud" class="hidden absolute top-0 left-0 w-full p-2.5 md:p-4 z-20 pointer-events-none flex flex-col gap-2">
+        <div class="flex justify-between items-start w-full max-w-6xl mx-auto gap-2">
+            
+            <!-- Левая панель: Очки, Дистанция, Сердечки и Сложность -->
+            <div class="flex flex-col gap-1.5">
+                <div class="neon-box px-3.5 py-2 rounded-2xl flex items-center gap-3 md:gap-4 pointer-events-auto">
+                    <div>
+                        <div class="text-[10px] text-cyan-300 uppercase font-bold tracking-wider">Счёт</div>
+                        <div id="hud-score" class="text-lg md:text-2xl font-cyber text-white neon-text-cyan">0</div>
+                    </div>
+                    <div class="h-7 w-[1px] bg-cyan-500/40"></div>
+                    <div>
+                        <div class="text-[10px] text-purple-300 uppercase font-bold tracking-wider">Дистанция</div>
+                        <div class="text-sm md:text-lg font-cyber text-purple-200"><span id="hud-dist">0</span> м</div>
+                    </div>
+                    <div class="h-7 w-[1px] bg-cyan-500/40"></div>
+                    <div>
+                        <div class="text-[10px] text-rose-300 uppercase font-bold tracking-wider">Жизни</div>
+                        <div id="hud-hearts" class="flex items-center gap-1 text-base md:text-xl mt-0.5"></div>
+                    </div>
+                </div>
+
+                <!-- Бейджи Комбо, 2x Прыжка и Быстрого переключения сложности -->
+                <div class="flex flex-wrap items-center gap-1.5 pointer-events-auto">
+                    <div id="combo-badge" class="neon-box px-3 py-1 rounded-xl border-yellow-400/60 flex items-center gap-2 transition-transform duration-150">
+                        <span class="text-[10px] uppercase font-bold text-yellow-300">Комбо:</span>
+                        <span id="hud-combo" class="text-xs md:text-sm font-cyber text-yellow-400 neon-text-gold">x1</span>
+                        <div class="w-10 md:w-14 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                            <div id="combo-bar" class="h-full bg-gradient-to-r from-yellow-400 to-orange-500 w-0 transition-all duration-150"></div>
+                        </div>
+                    </div>
+
+                    <div id="jump-badge" class="neon-box px-2.5 py-1 rounded-xl border-cyan-400/50 flex items-center gap-1 text-[10px] font-bold text-cyan-200">
+                        <i class="fa-solid fa-angles-up text-cyan-400"></i>
+                        <span id="hud-jumps">2x Прыжок</span>
+                    </div>
+
+                    <!-- Быстрое переключение сложности прямо в верхней панели -->
+                    <button id="btn-hud-diff" class="neon-box px-2.5 py-1 rounded-xl border-emerald-400/60 text-[10px] font-cyber text-emerald-300 hover:border-white transition cursor-pointer" title="Нажми, чтобы сменить режим сложности на лету">
+                        🟢 ЧИЛЛ
+                    </button>
+                </div>
+            </div>
+
+            <!-- Центральная панель: Прогресс мира (500м) и Активные Бонусы -->
+            <div class="hidden sm:flex flex-col items-center gap-1.5 flex-1 max-w-xs mx-2">
+                <div class="neon-box w-full px-3.5 py-1.5 rounded-2xl border-cyan-500/40">
+                    <div class="flex justify-between items-center text-[10px] font-bold uppercase tracking-wider mb-1">
+                        <span id="hud-zone-name" class="text-cyan-300 truncate">Ур. 1: Неоновый Мегаполис</span>
+                        <span id="hud-zone-pct" class="text-pink-400">0%</span>
+                    </div>
+                    <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                        <div id="hud-zone-bar" class="h-full bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 w-0 transition-all duration-200"></div>
+                    </div>
+                </div>
+
+                <!-- Таймеры активных усилений -->
+                <div id="powerups-hud" class="flex flex-wrap justify-center gap-1.5 items-center">
+                    <div id="badge-shield" class="hidden neon-box px-2.5 py-1 rounded-xl border-cyan-400 flex items-center gap-1.5 animate-pulse">
+                        <i class="fa-solid fa-shield-halved text-cyan-400 text-sm"></i>
+                        <span id="shield-timer" class="text-[11px] font-cyber text-cyan-200">10.0с</span>
+                    </div>
+                    <div id="badge-magnet" class="hidden neon-box px-2.5 py-1 rounded-xl border-pink-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-magnet text-pink-400 text-sm animate-bounce"></i>
+                        <span id="magnet-timer" class="text-[11px] font-cyber text-pink-200">10.0с</span>
+                    </div>
+                    <div id="badge-boost" class="hidden neon-box px-2.5 py-1 rounded-xl border-yellow-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-bolt text-yellow-400 text-sm"></i>
+                        <span class="text-[11px] font-cyber text-yellow-200">ТУРБО-РЫВОК!</span>
+                    </div>
+                    <div id="badge-overdrive" class="hidden neon-box px-2.5 py-1 rounded-xl border-amber-400 flex items-center gap-1.5 animate-bounce">
+                        <i class="fa-solid fa-fire-flame-curved text-amber-400 text-sm"></i>
+                        <span id="overdrive-timer" class="text-[11px] font-cyber text-amber-200">ГИПЕР-ДРАЙВ x2!</span>
+                    </div>
+                    <div id="badge-slope" class="hidden neon-box px-2.5 py-1 rounded-xl border-emerald-400 flex items-center gap-1.5">
+                        <i id="slope-icon" class="fa-solid fa-angles-down text-emerald-400 text-sm"></i>
+                        <span id="slope-text" class="text-[11px] font-cyber text-emerald-200">С ГОРКИ!</span>
+                    </div>
+                </div>
+
+                <!-- Шкала Гипер-Драйва (Overdrive) -->
+                <div class="neon-box w-full px-3 py-1 rounded-xl border-amber-400/50 flex items-center gap-2 pointer-events-auto">
+                    <i class="fa-solid fa-bolt-lightning text-amber-400 text-xs"></i>
+                    <div class="flex-1 h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
+                        <div id="hud-overdrive-bar" class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-pink-500 w-0 transition-all duration-150"></div>
+                    </div>
+                    <span id="hud-overdrive-pct" class="text-[10px] font-cyber text-amber-300">0%</span>
+                </div>
+            </div>
+
+            <!-- Правая панель: Кристаллы, Музыка, Звук и Пауза -->
+            <div class="flex items-center gap-1.5 md:gap-2 pointer-events-auto">
+                <div class="neon-box px-3 py-1.5 md:py-2 rounded-2xl flex items-center gap-1.5 border-yellow-400/50">
+                    <i class="fa-solid fa-gem text-yellow-400 text-sm md:text-lg animate-pulse"></i>
+                    <span id="hud-crystals" class="text-sm md:text-xl font-cyber text-yellow-300 neon-text-gold">0</span>
+                </div>
+
+                <button id="btn-music-hud" class="neon-box px-2.5 h-9 md:h-11 rounded-2xl flex items-center justify-center gap-1.5 text-pink-300 hover:text-white hover:border-pink-400 active:scale-95 transition cursor-pointer" title="Переключить музыкальный трек (M)">
+                    <i class="fa-solid fa-music text-xs md:text-sm"></i>
+                    <span id="hud-track-name" class="hidden md:inline text-[10px] font-cyber">ТРЕК 1</span>
+                </button>
+
+                <button id="btn-mute-hud" class="neon-box w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center text-cyan-300 hover:text-white hover:border-cyan-300 active:scale-95 transition cursor-pointer" title="Звук Вкл/Выкл">
+                    <i class="fa-solid fa-volume-high text-base md:text-lg"></i>
+                </button>
+
+                <button id="btn-pause" class="neon-box w-9 h-9 md:w-11 md:h-11 rounded-2xl flex items-center justify-center text-cyan-300 hover:text-white hover:border-cyan-300 active:scale-95 transition cursor-pointer" title="Пауза (P)">
+                    <i class="fa-solid fa-pause text-base md:text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ЭКРАННЫЕ КНОПКИ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ И ПЛАНШЕТОВ -->
+    <div id="touch-controls" class="hidden absolute bottom-4 left-0 w-full px-4 z-20 pointer-events-none flex justify-between items-end">
+        <div class="flex gap-2.5 pointer-events-auto">
+            <button id="btn-left" class="neon-box w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center active:scale-90 active:bg-cyan-500/30 transition shadow-lg">
+                <i class="fa-solid fa-chevron-left text-2xl md:text-3xl text-cyan-300"></i>
+            </button>
+            <button id="btn-right" class="neon-box w-16 h-16 md:w-20 md:h-20 rounded-2xl flex items-center justify-center active:scale-90 active:bg-cyan-500/30 transition shadow-lg">
+                <i class="fa-solid fa-chevron-right text-2xl md:text-3xl text-cyan-300"></i>
+            </button>
+        </div>
+
+        <div class="flex gap-2.5 pointer-events-auto items-end">
+            <button id="btn-slam" class="neon-box w-14 h-14 md:w-16 md:h-16 rounded-2xl flex items-center justify-center border-pink-500/60 active:scale-90 active:bg-pink-500/30 transition shadow-lg" title="Быстрый спуск вниз">
+                <i class="fa-solid fa-angles-down text-xl md:text-2xl text-pink-400"></i>
+            </button>
+            <button id="btn-jump" class="neon-box w-16 h-16 md:w-20 md:h-20 rounded-2xl flex flex-col items-center justify-center border-cyan-400 active:scale-90 active:bg-cyan-500/30 transition shadow-lg" title="Прыжок / Двойной прыжок">
+                <i class="fa-solid fa-chevron-up text-2xl md:text-3xl text-cyan-300"></i>
+                <span class="text-[9px] font-cyber text-cyan-200 uppercase">2x Прыжок</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <div id="main-menu" class="absolute inset-0 z-30 flex items-center justify-center p-3 md:p-5 bg-black/45 backdrop-blur-sm overflow-y-auto">
+        <div class="neon-box max-w-2xl w-full rounded-3xl p-4 md:p-6 text-center flex flex-col items-center gap-3.5 relative my-auto max-h-[96vh] overflow-y-auto">
+            
+            <!-- Шапка: Название и Статистика -->
+            <div class="w-full flex flex-col sm:flex-row justify-between items-center gap-2 border-b border-cyan-500/30 pb-3">
+                <div class="text-center sm:text-left">
+                    <div class="inline-block px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[10px] font-bold tracking-widest uppercase">
+                        Версия 2.5 • Виляющая Трасса • Гипер-Драйв
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-cyber text-white neon-text-cyan tracking-wide mt-0.5">
+                        КИБЕР-СФЕРА 3D: НЕОНОВЫЙ РЫВОК
+                    </h1>
+                </div>
+
+                <!-- Рекорд, Кристаллы, Музыка и Кнопка Звука -->
+                <div class="flex items-center gap-1.5">
+                    <div class="flex gap-2.5 bg-slate-900/90 px-3.5 py-2 rounded-2xl border border-slate-700">
+                        <div class="flex items-center gap-1.5 pr-2.5 border-r border-slate-700">
+                            <i class="fa-solid fa-trophy text-amber-400 text-sm"></i>
+                            <div class="text-left">
+                                <div class="text-[9px] text-slate-400 uppercase font-bold">Рекорд</div>
+                                <div id="menu-highscore" class="text-sm md:text-base font-cyber text-white">0</div>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-1.5 pl-1">
+                            <i class="fa-solid fa-gem text-yellow-400 text-sm"></i>
+                            <div class="text-left">
+                                <div class="text-[9px] text-slate-400 uppercase font-bold">Кристаллы</div>
+                                <div id="menu-crystals" class="text-sm md:text-base font-cyber text-yellow-300">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <button id="btn-music-menu" class="neon-box px-3 h-10 rounded-2xl flex items-center justify-center gap-1.5 text-pink-300 hover:text-white transition cursor-pointer" title="Переключить музыкальный трек (track1.mp3, track2.mp3, track3.mp3)">
+                        <i class="fa-solid fa-music text-xs"></i>
+                        <span id="menu-track-name" class="text-[10px] font-cyber">ТРЕК 1</span>
+                    </button>
+                    <button id="btn-mute-menu" class="neon-box w-10 h-10 rounded-2xl flex items-center justify-center text-cyan-300 hover:text-white transition cursor-pointer" title="Звук Вкл/Выкл">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 1. ВЫБОР СЛОЖНОСТИ -->
+            <div class="w-full text-left space-y-1.5">
+                <div class="flex flex-wrap justify-between items-center gap-1">
+                    <span class="text-xs font-cyber text-cyan-300 uppercase tracking-wider">
+                        <i class="fa-solid fa-gauge-high mr-1"></i> 1. Режим сложности:
+                    </span>
+                    <span id="diff-desc-label" class="text-[11px] text-emerald-300 font-semibold">3 жизни • Комфортная скорость • Двойной прыжок</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2" id="difficulty-selector">
+                    <button data-diff="chill" class="diff-btn p-2.5 rounded-2xl border-2 text-left transition flex flex-col justify-between cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-cyber text-xs md:text-sm text-emerald-300">🟢 ЧИЛЛ</span>
+                            <span class="text-[10px] bg-emerald-500/20 text-emerald-200 px-1.5 py-0.5 rounded font-bold">3 ❤️</span>
+                        </div>
+                        <div class="text-[10px] text-slate-300 mt-1 leading-tight">Рекомендуется! Плавный темп и много места</div>
+                    </button>
+
+                    <button data-diff="drive" class="diff-btn p-2.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-cyber text-xs md:text-sm text-amber-300">🟡 ДРАЙВ</span>
+                            <span class="text-[10px] bg-amber-500/20 text-amber-200 px-1.5 py-0.5 rounded font-bold">2 ❤️</span>
+                        </div>
+                        <div class="text-[10px] text-slate-300 mt-1 leading-tight">Средняя скорость • Множитель x1.25 к очкам</div>
+                    </button>
+
+                    <button data-diff="hardcore" class="diff-btn p-2.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer">
+                        <div class="flex items-center justify-between w-full">
+                            <span class="font-cyber text-xs md:text-sm text-rose-400">🔴 ПРОФИ</span>
+                            <span class="text-[10px] bg-rose-500/20 text-rose-200 px-1.5 py-0.5 rounded font-bold">1 ❤️</span>
+                        </div>
+                        <div class="text-[10px] text-slate-300 mt-1 leading-tight">Быстрый темп • Множитель x1.6 к очкам</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 2. ВЫБОР СТАРТОВОГО МИРА И ОПЦИЯ БЛОКИРОВКИ МИРА -->
+            <div class="w-full text-left space-y-1.5">
+                <div class="flex flex-wrap justify-between items-center gap-2">
+                    <span class="text-xs font-cyber text-pink-300 uppercase tracking-wider">
+                        <i class="fa-solid fa-earth-americas mr-1"></i> 2. Выбери 3D-Мир (автосмена каждые 500м):
+                    </span>
+                    <button id="btn-lock-zone" class="px-2.5 py-1 rounded-xl border text-[10px] font-cyber flex items-center gap-1.5 transition cursor-pointer">
+                        <i class="fa-solid fa-arrows-rotate"></i>
+                        <span id="lock-zone-text">Автосмена каждые 500м: ВКЛ</span>
+                    </button>
+                </div>
+                <div id="biome-selector" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    <!-- Динамические карточки 6 миров -->
+                </div>
+            </div>
+
+            <!-- Выбранный скин и подсказка управления -->
+            <div class="w-full bg-slate-950/75 rounded-2xl p-3 border border-cyan-500/25 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs">
+                <div class="flex items-center gap-2.5">
+                    <div id="menu-skin-icon" class="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-400 flex items-center justify-center text-cyan-300 text-lg shrink-0">
+                        <i class="fa-solid fa-circle-dot"></i>
+                    </div>
+                    <div class="text-left">
+                        <div class="text-[10px] text-slate-400 uppercase font-bold">Активный Кибер-Бот: <span id="menu-skin-name" class="text-white">Кибер-Сфера</span></div>
+                        <div id="menu-skin-perk" class="text-[11px] text-cyan-300 font-semibold">Суперспособность: Стандартный баланс</div>
+                    </div>
+                </div>
+                <div class="text-[11px] text-slate-300 text-center sm:text-right">
+                    <span class="text-cyan-300 font-bold">A/D или ◄/►</span> — Полоса • <span class="text-pink-300 font-bold">2x Пробел/W</span> — Двойной Прыжок!
+                </div>
+            </div>
+
+            <!-- Главные кнопки запуска и Гаража -->
+            <div class="flex flex-col sm:flex-row gap-2.5 w-full pt-1">
+                <button id="btn-start" class="neon-btn flex-1 py-3.5 px-6 rounded-2xl font-cyber text-lg md:text-xl text-slate-950 flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-rocket"></i> ВПЕРЁД В ЗАБЕГ!
+                </button>
+                <button id="btn-open-shop" class="neon-btn neon-btn-pink py-3.5 px-6 rounded-2xl font-cyber text-base md:text-lg text-white flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-robot"></i> КИБЕР-ГАРАЖ (8)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- КИБЕР-ГАРАЖ (МАГАЗИН С 3D-ПРЕДПРОСМОТРОМ) -->
+    <div id="shop-modal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-3 md:p-5 bg-black/75 backdrop-blur-md">
+        <div class="neon-box max-w-4xl w-full rounded-3xl p-4 md:p-6 flex flex-col gap-3.5 max-h-[94vh]">
+            <!-- Шапка гаража -->
+            <div class="flex flex-wrap justify-between items-center border-b border-cyan-500/30 pb-3 gap-2">
+                <div>
+                    <h2 class="text-xl md:text-2xl font-cyber text-white neon-text-cyan">КИБЕР-ГАРАЖ 3D</h2>
+                    <p class="text-xs text-slate-300">Крути 3D-модель мышкой или пальцем и выбирай бота с суперспособностью!</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-gift-crystals" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-cyber text-xs flex items-center gap-1.5 shadow-lg hover:scale-105 active:scale-95 transition cursor-pointer">
+                        <i class="fa-solid fa-gift"></i> +500 💎 ПОДАРОК
+                    </button>
+
+                    <div class="bg-slate-900 px-3.5 py-1.5 rounded-xl border border-yellow-400/50 flex items-center gap-2">
+                        <i class="fa-solid fa-gem text-yellow-400"></i>
+                        <span id="shop-crystals" class="font-cyber text-base md:text-lg text-yellow-300">0</span>
+                    </div>
+                    <button id="btn-close-shop" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white transition cursor-pointer">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3D-Подиум предпросмотра выбранного скина -->
+            <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center bg-slate-950/80 p-3 rounded-2xl border border-cyan-500/30">
+                <div class="md:col-span-5 flex flex-col items-center relative">
+                    <canvas id="shop-preview-canvas" class="w-full h-36 md:h-44 rounded-xl bg-gradient-to-b from-slate-900 to-slate-950 border border-cyan-500/20 cursor-grab active:cursor-grabbing"></canvas>
+                    <div class="absolute bottom-2 text-[10px] text-cyan-300/80 uppercase font-bold pointer-events-none">
+                        <i class="fa-solid fa-hand-pointer mr-1"></i> Покрути 3D-модель
+                    </div>
+                </div>
+                <div class="md:col-span-7 flex flex-col justify-between text-left space-y-2 px-1">
+                    <div class="flex items-center justify-between">
+                        <span id="preview-skin-title" class="text-lg md:text-2xl font-cyber text-white neon-text-cyan">Кибер-Сфера</span>
+                        <span id="preview-skin-status" class="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-cyber text-xs">АКТИВЕН</span>
+                    </div>
+                    <p id="preview-skin-desc" class="text-xs md:text-sm text-slate-300">Энергетическое ядро с двойным гироскопическим кольцом.</p>
+                    <div class="p-2.5 rounded-xl bg-emerald-950/50 border border-emerald-500/40 flex items-center gap-2 text-xs md:text-sm text-emerald-300 font-bold">
+                        <i class="fa-solid fa-wand-magic-sparkles text-base"></i>
+                        <span id="preview-skin-perk">Суперспособность: Баланс всех систем</span>
+                    </div>
+                    <div id="preview-action-container" class="pt-1"></div>
+                </div>
+            </div>
+
+            <!-- Сетка всех 8 скинов -->
+            <div id="skins-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto pr-1 py-1 max-h-60">
+                <!-- Заполняется через JS -->
+            </div>
+
+            <div class="pt-2 border-t border-cyan-500/30 flex justify-between items-center">
+                <span class="text-xs text-slate-400">Все купленные скины и рекорды автоматически сохраняются!</span>
+                <button id="btn-shop-back" class="neon-btn px-6 py-2 rounded-xl font-cyber text-slate-950 text-sm cursor-pointer">
+                    В МЕНЮ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ОКНО ПАУЗЫ -->
+    <div id="pause-modal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm">
+        <div class="neon-box max-w-sm w-full rounded-3xl p-6 text-center flex flex-col gap-4">
+            <h2 class="text-3xl font-cyber text-white neon-text-cyan">ПАУЗА</h2>
+            <p class="text-sm text-slate-300">Передохни перед следующим неоновым рывком!</p>
+            <button id="btn-resume" class="neon-btn py-3.5 rounded-2xl font-cyber text-slate-950 text-lg flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-play"></i> ПРОДОЛЖИТЬ
+            </button>
+            <button id="btn-quit-menu" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 py-3 rounded-2xl font-cyber text-white text-base transition cursor-pointer">
+                В ГЛАВНОЕ МЕНЮ
+            </button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН ОКОНЧАНИЯ ЗАБЕГА (GAME OVER) -->
+    <div id="gameover-modal" class="hidden absolute inset-0 z-40 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+        <div class="neon-box max-w-md w-full rounded-3xl p-6 md:p-7 text-center flex flex-col items-center gap-4 border-pink-500/70">
+            <div class="w-14 h-14 rounded-2xl bg-pink-500/20 border-2 border-pink-500 flex items-center justify-center text-pink-400 text-2xl shadow-lg">
+                <i class="fa-solid fa-flag-checkered"></i>
+            </div>
+
+            <div class="space-y-1">
+                <h2 class="text-2xl md:text-3xl font-cyber text-white neon-text-pink">ЗАБЕГ ОКОНЧЕН!</h2>
+                <p id="new-record-badge" class="hidden text-xs font-cyber bg-amber-400 text-slate-950 px-3 py-1 rounded-full uppercase tracking-wider inline-block mt-1">
+                    ★ Новый личный рекорд! ★
+                </p>
+            </div>
+
+            <div class="w-full bg-slate-900/90 rounded-2xl p-4 border border-slate-700 space-y-2.5 text-sm">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400">Набрано очков:</span>
+                    <span id="go-score" class="font-cyber text-xl text-cyan-300">0</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400">Пройдено дистанции:</span>
+                    <span class="font-cyber text-base text-purple-300"><span id="go-dist">0</span> м</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">Собрано кристаллов:</span>
+                    <span class="font-cyber text-base text-yellow-400 flex items-center gap-1.5">
+                        +<span id="go-crystals">0</span> <i class="fa-solid fa-gem text-xs"></i>
+                    </span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-2.5 w-full">
+                <button id="btn-retry" class="neon-btn flex-1 py-3.5 px-5 rounded-2xl font-cyber text-slate-950 text-base md:text-lg flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-rotate-right"></i> ЕЩЁ РАЗ!
+                </button>
+                <button id="btn-go-shop" class="neon-btn neon-btn-pink py-3.5 px-5 rounded-2xl font-cyber text-white text-base flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-robot"></i> ГАРАЖ
+                </button>
+            </div>
+            <button id="btn-go-menu" class="text-xs text-slate-400 hover:text-white underline uppercase tracking-wider cursor-pointer">
+                Настроить сложность или сменить мир в меню
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. ПРОЦЕДУРНЫЙ ЗВУКОВОЙ СИНТЕЗАТОР И МУЗЫКАЛЬНЫЙ ПЛЕЕР
+        // ==========================================
+        const MUSIC_TRACKS = [
+            { id: 0, name: 'ТРЕК 1: ЧИЛЛ', file: 'track1.mp3', bpm: 112, notes: [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23] },
+            { id: 1, name: 'ТРЕК 2: ДРАЙВ', file: 'track2.mp3', bpm: 128, notes: [220.00, 261.63, 329.63, 440.00, 392.00, 329.63, 261.63, 293.66] },
+            { id: 2, name: 'ТРЕК 3: БОСС', file: 'track3.mp3', bpm: 142, notes: [196.00, 233.08, 293.66, 392.00, 349.23, 293.66, 233.08, 261.63] },
+            { id: 3, name: 'ТРЕК 4: РЕЛАКС', file: 'track4.mp3', bpm: 90, notes: [261.63, 293.66, 329.63, 392.00, 329.63, 293.66, 246.94, 261.63] },
+            { id: 4, name: 'ТРЕК 5: КОСМО-СОН', file: 'track5.mp3', bpm: 80, notes: [220.00, 246.94, 293.66, 329.63, 293.66, 246.94, 196.00, 220.00] },
+            { id: 5, name: 'МУЗ: ВЫКЛ', file: null, bpm: 0, notes: [] }
+        ];
+
+        class SoundSystem {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+                this.currentTrackIdx = 0;
+                this.audioElements = {};
+                this.activeAudio = null;
+                this.synthInterval = null;
+                this.synthStep = 0;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) this.ctx = new AudioCtx();
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            toggleMute() {
+                this.muted = !this.muted;
+                if (this.activeAudio) {
+                    this.activeAudio.muted = this.muted;
+                }
+                if (this.muted) {
+                    this.stopSynthLoop();
+                } else {
+                    this.startMusicTrack(this.currentTrackIdx);
+                }
+                return this.muted;
+            }
+
+            cycleMusicTrack() {
+                this.init();
+                this.currentTrackIdx = (this.currentTrackIdx + 1) % MUSIC_TRACKS.length;
+                this.startMusicTrack(this.currentTrackIdx);
+                return MUSIC_TRACKS[this.currentTrackIdx];
+            }
+
+            startMusicTrack(idx = this.currentTrackIdx) {
+                this.currentTrackIdx = idx;
+                const track = MUSIC_TRACKS[idx];
+
+                if (this.activeAudio) {
+                    this.activeAudio.pause();
+                    this.activeAudio.currentTime = 0;
+                    this.activeAudio = null;
+                }
+                this.stopSynthLoop();
+
+                if (!track || !track.file || this.muted) return;
+
+                if (!this.audioElements[track.file]) {
+                    const audio = new Audio(track.file);
+                    audio.loop = true;
+                    audio.volume = 0.42;
+                    audio.dataset.failed = 'false';
+                    audio.addEventListener('error', () => {
+                        audio.dataset.failed = 'true';
+                        if (this.currentTrackIdx === idx && !this.muted) {
+                            this.startSynthFallback(track);
+                        }
+                    });
+                    this.audioElements[track.file] = audio;
+                }
+
+                const targetAudio = this.audioElements[track.file];
+                if (targetAudio.dataset.failed === 'true') {
+                    this.startSynthFallback(track);
+                } else {
+                    this.activeAudio = targetAudio;
+                    this.activeAudio.muted = this.muted;
+                    targetAudio.play().catch(() => {
+                        this.startSynthFallback(track);
+                    });
+                }
+            }
+
+            startSynthFallback(track) {
+                this.stopSynthLoop();
+                if (!this.ctx || this.muted || !track || track.bpm <= 0) return;
+                const stepMs = (60 / track.bpm / 2) * 1000;
+                this.synthStep = 0;
+                this.synthInterval = setInterval(() => {
+                    if (this.muted || !this.ctx || gameState.status === 'PAUSED') return;
+                    const freq = track.notes[this.synthStep % track.notes.length];
+                    this.synthStep++;
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = this.synthStep % 4 === 0 ? 'triangle' : 'sine';
+                    osc.frequency.setValueAtTime(this.synthStep % 2 === 0 ? freq * 0.5 : freq, now);
+                    gain.gain.setValueAtTime(0.045, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + (stepMs / 1000) * 0.9);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + (stepMs / 1000) * 0.9);
+                }, stepMs);
+            }
+
+            stopSynthLoop() {
+                if (this.synthInterval) {
+                    clearInterval(this.synthInterval);
+                    this.synthInterval = null;
+                }
+            }
+
+            playNearMiss() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(680, now);
+                osc.frequency.exponentialRampToValueAtTime(1180, now + 0.14);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.14);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.14);
+            }
+
+            playWhoosh() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(250, now);
+                osc.frequency.exponentialRampToValueAtTime(560, now + 0.08);
+                gain.gain.setValueAtTime(0.14, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.08);
+            }
+
+            playJump(isDouble = false) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(isDouble ? 320 : 185, now);
+                osc.frequency.exponentialRampToValueAtTime(isDouble ? 900 : 620, now + 0.18);
+                gain.gain.setValueAtTime(0.22, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.18);
+            }
+
+            playSlam() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(380, now);
+                osc.frequency.exponentialRampToValueAtTime(85, now + 0.15);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playCrystal(comboIndex = 1) {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                const baseFreq = 520 + Math.min(comboIndex * 35, 700);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(baseFreq, now);
+                osc.frequency.exponentialRampToValueAtTime(baseFreq * 1.45, now + 0.12);
+                gain.gain.setValueAtTime(0.18, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+
+            playPowerup() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [440, 554, 659, 880].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.055);
+                    gain.gain.setValueAtTime(0.18, now + idx * 0.055);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.055 + 0.15);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.055);
+                    osc.stop(now + idx * 0.055 + 0.15);
+                });
+            }
+
+            playHeal() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                [523, 659, 784, 1046].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+                    gain.gain.setValueAtTime(0.2, now + idx * 0.06);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.06 + 0.18);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.06);
+                    osc.stop(now + idx * 0.06 + 0.18);
+                });
+            }
+
+            playHit() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(480, now);
+                osc.frequency.linearRampToValueAtTime(120, now + 0.35);
+                gain.gain.setValueAtTime(0.26, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            }
+
+            playCrash() {
+                if (this.muted || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(170, now);
+                osc.frequency.exponentialRampToValueAtTime(38, now + 0.55);
+                gain.gain.setValueAtTime(0.32, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.55);
+            }
+        }
+
+        const sound = new SoundSystem();
+
+        // ==========================================
+        // 2. ДАННЫЕ СЛОЖНОСТИ, 6 МИРОВ И 8 3D-СКИНОВ
+        // ==========================================
+        const DIFFICULTIES = {
+            chill: {
+                id: 'chill',
+                name: '🟢 ЧИЛЛ',
+                desc: '3 жизни ❤️ • Мягкое ускорение • Много места для манёвра',
+                baseSpeed: 19,
+                maxSpeed: 36,
+                accel: 0.16,
+                minGap: 36,
+                baseGap: 44,
+                hearts: 3,
+                scoreMult: 1.0,
+                shieldDur: 12.0,
+                magnetDur: 14.0,
+                hitboxForgiveness: 0.78
+            },
+            drive: {
+                id: 'drive',
+                name: '🟡 ДРАЙВ',
+                desc: '2 жизни ❤️ • Средняя скорость • Множитель очков x1.25',
+                baseSpeed: 24,
+                maxSpeed: 46,
+                accel: 0.26,
+                minGap: 26,
+                baseGap: 34,
+                hearts: 2,
+                scoreMult: 1.25,
+                shieldDur: 9.0,
+                magnetDur: 10.0,
+                hitboxForgiveness: 0.88
+            },
+            hardcore: {
+                id: 'hardcore',
+                name: '🔴 ПРОФИ',
+                desc: '1 жизнь ❤️ • Высокая скорость • Множитель очков x1.6',
+                baseSpeed: 30,
+                maxSpeed: 58,
+                accel: 0.40,
+                minGap: 19,
+                baseGap: 26,
+                hearts: 1,
+                scoreMult: 1.6,
+                shieldDur: 7.5,
+                magnetDur: 8.5,
+                hitboxForgiveness: 0.96
+            }
+        };
+
+        const ZONES = [
+            {
+                id: 0,
+                name: 'Ур. 1: Неоновый Мегаполис',
+                shortName: 'Мегаполис',
+                icon: 'fa-city',
+                sceneryType: 'city',
+                gridColor: 0x00f3ff,
+                fogColor: 0x06081c,
+                roadColor: 0x090c20,
+                accentHex: '#00f3ff'
+            },
+            {
+                id: 1,
+                name: 'Ур. 2: Кибер-Джунгли',
+                shortName: 'Кибер-Джунгли',
+                icon: 'fa-tree',
+                sceneryType: 'jungle',
+                gridColor: 0x00ff66,
+                fogColor: 0x041911,
+                roadColor: 0x061d14,
+                accentHex: '#00ff66'
+            },
+            {
+                id: 2,
+                name: 'Ур. 3: Кристальная Пещера',
+                shortName: 'Кристальная Пещера',
+                icon: 'fa-gem',
+                sceneryType: 'cave',
+                gridColor: 0xd900ff,
+                fogColor: 0x160526,
+                roadColor: 0x1a092e,
+                accentHex: '#d900ff'
+            },
+            {
+                id: 3,
+                name: 'Ур. 4: Вулкан Гипер-Магмы',
+                shortName: 'Гипер-Магма',
+                icon: 'fa-volcano',
+                sceneryType: 'magma',
+                gridColor: 0xff4500,
+                fogColor: 0x1f0704,
+                roadColor: 0x260b06,
+                accentHex: '#ff4500'
+            },
+            {
+                id: 4,
+                name: 'Ур. 5: Арктический Синтез',
+                shortName: 'Арктический Синтез',
+                icon: 'fa-snowflake',
+                sceneryType: 'arctic',
+                gridColor: 0x66ffff,
+                fogColor: 0x071d2c,
+                roadColor: 0x0b2638,
+                accentHex: '#66ffff'
+            },
+            {
+                id: 5,
+                name: 'Ур. 6: Квантовый Вакуум',
+                shortName: 'Квантовый Вакуум',
+                icon: 'fa-atom',
+                sceneryType: 'void',
+                gridColor: 0xffcc00,
+                fogColor: 0x0b051d,
+                roadColor: 0x110926,
+                accentHex: '#ffcc00'
+            }
+        ];
+
+        const SKINS = [
+            {
+                id: 'sphere_cyan',
+                name: 'Робо-Пёсик «Спарки»',
+                desc: 'Дружелюбный кибер-щенок с большими светящимися ушками, косточкой и виляющим хвостиком!',
+                perkText: 'Стандартный баланс всех систем',
+                perkType: 'balanced',
+                price: 0,
+                color: 0x00f3ff,
+                emissive: 0x0066cc,
+                icon: 'fa-dog'
+            },
+            {
+                id: 'cube_pink',
+                name: 'Зайка «Банни-Бит»',
+                desc: 'Розовая кибер-зайка в стильных DJ-наушниках с длинными неоновыми ушками и пушистым хвостиком!',
+                perkText: '+15% очков за сбор кристаллов',
+                perkType: 'crystal_score_15',
+                price: 100,
+                color: 0xff44aa,
+                emissive: 0xaa0066,
+                icon: 'fa-headphones'
+            },
+            {
+                id: 'torus_green',
+                name: 'Квакша «Фрогги»',
+                desc: 'Весёлый кибер-лягушонок с большими глазами, золотой короной и реактивным ранцем!',
+                perkText: '+4 сек к действию Щита и Турбо-рывка',
+                perkType: 'boost_shield_plus',
+                price: 200,
+                color: 0x00e65c,
+                emissive: 0x006622,
+                icon: 'fa-frog'
+            },
+            {
+                id: 'neko_bot',
+                name: 'Рыжий Кот «Борис-Бот»',
+                desc: 'Тот самый обаятельный рыжий полосатый котик из рекламы с изумрудными глазами и белой грудкой!',
+                perkText: '+1 дополнительное Сердце жизни ❤️',
+                perkType: 'extra_heart',
+                price: 300,
+                color: 0xff7700,
+                emissive: 0xcc4400,
+                icon: 'fa-cat'
+            },
+            {
+                id: 'chrono_spinner',
+                name: 'Панда «Бамбук-Z»',
+                desc: 'Упитанный чёрно-белый мишка-панда с кибер-моноклем и неоновым стеблем бамбука за спиной!',
+                perkText: 'Встроенный мини-магнит для кристаллов',
+                perkType: 'auto_magnet',
+                price: 400,
+                color: 0x00ffcc,
+                emissive: 0x008866,
+                icon: 'fa-paw'
+            },
+            {
+                id: 'octa_gold',
+                name: 'Лисёнок «Фокс-Джет»',
+                desc: 'Хитрый золотисто-огненный лисёнок с белыми щёчками и пушистым хвостом с белым кончиком!',
+                perkText: 'x2 кристаллов за каждый собранный камень!',
+                perkType: 'double_crystals',
+                price: 500,
+                color: 0xffaa00,
+                emissive: 0xcc3300,
+                icon: 'fa-fire'
+            },
+            {
+                id: 'star_fighter',
+                name: 'Пингвин «Айс-Пилот»',
+                desc: 'Крутой арктический пингвинёнок в очках пилота с желтым клювом и турбо-крылышками!',
+                perkText: 'Высокий прыжок и плавная антигравитация',
+                perkType: 'high_jump',
+                price: 650,
+                color: 0x33bbff,
+                emissive: 0x0044aa,
+                icon: 'fa-feather-pointed'
+            },
+            {
+                id: 'supernova_core',
+                name: 'Дракоша «Спаркс»',
+                desc: 'Огненный малыш-дракончик с золотыми рожками, крылышками и светящимся гребнем на спине!',
+                perkText: '+1 Сердце жизни ❤️ и встроенная магнитная аура!',
+                perkType: 'supernova_ultimate',
+                price: 800,
+                color: 0xff3300,
+                emissive: 0xff8800,
+                icon: 'fa-dragon'
+            }
+        ];
+
+        // ==========================================
+        // 3. СОХРАНЕНИЕ ПРОГРЕССА (localStorage)
+        // ==========================================
+        const STORAGE_KEY = 'cyber_sphere_save_v2_final';
+        let playerData = {
+            highScore: 0,
+            crystals: 150, // Стартовый подарок 150 кристаллов
+            unlockedSkins: ['sphere_cyan'],
+            selectedSkin: 'sphere_cyan',
+            selectedDifficulty: 'chill',
+            selectedStartZone: 0,
+            lockZone: false
+        };
+
+        function loadSaveData() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (raw) {
+                    const parsed = JSON.parse(raw);
+                    playerData = { ...playerData, ...parsed };
+                }
+            } catch (e) {
+                console.warn('Ошибка чтения сохранения:', e);
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(playerData));
+            } catch (e) {
+                console.warn('Ошибка записи сохранения:', e);
+            }
+        }
+
+        loadSaveData();
+
+        // ==========================================
+        // 4. УТИЛИТА ОЧИСТКИ ПАМЯТИ И ГЕНЕРАТОР 3D-МОДЕЛЕЙ СКИНОВ
+        // ==========================================
+        function disposeObject3D(obj) {
+            if (!obj) return;
+            obj.traverse(child => {
+                if (child.geometry && !child.userData.sharedGeo) {
+                    child.geometry.dispose();
+                }
+                if (child.material && !child.userData.sharedMat) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(m => m.dispose());
+                    } else {
+                        child.material.dispose();
+                    }
+                }
+            });
+        }
+
+        function createSkinMeshNodes(skinId, isPreview = false) {
+            const skin = SKINS.find(s => s.id === skinId) || SKINS[0];
+            const coreGroup = new THREE.Group();
+            const secondaryGroup = new THREE.Group();
+
+            // Вспомогательный конструктор милых аниме/мультяшных глазок на лицевой стороне (+Z)
+            function addCartoonEyes(parent, eyeColorHex, yPos = 0.14, zPos = 0.80, xSpread = 0.30, scale = 1.0) {
+                const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const irisMat = new THREE.MeshBasicMaterial({ color: eyeColorHex });
+                const pupilMat = new THREE.MeshBasicMaterial({ color: 0x111122 });
+
+                [-1, 1].forEach(side => {
+                    const eyeGroup = new THREE.Group();
+                    const sclera = new THREE.Mesh(new THREE.SphereGeometry(0.16 * scale, 14, 14), whiteMat);
+                    sclera.scale.set(1.05, 1.22, 0.55);
+                    eyeGroup.add(sclera);
+
+                    const iris = new THREE.Mesh(new THREE.SphereGeometry(0.115 * scale, 12, 12), irisMat);
+                    iris.scale.set(1.0, 1.15, 0.5);
+                    iris.position.set(0, -0.01, 0.05 * scale);
+                    eyeGroup.add(iris);
+
+                    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.075 * scale, 10, 10), pupilMat);
+                    pupil.scale.set(1.0, 1.1, 0.5);
+                    pupil.position.set(0, -0.01, 0.08 * scale);
+                    eyeGroup.add(pupil);
+
+                    const highlight = new THREE.Mesh(new THREE.SphereGeometry(0.042 * scale, 8, 8), whiteMat);
+                    highlight.position.set(side * 0.035 * scale, 0.045 * scale, 0.11 * scale);
+                    eyeGroup.add(highlight);
+
+                    eyeGroup.position.set(side * xSpread, yPos, zPos);
+                    eyeGroup.rotation.y = side * 0.18;
+                    parent.add(eyeGroup);
+                });
+            }
+
+            // Вспомогательный конструктор румяных щёчек
+            function addCuteCheeks(parent, colorHex = 0xff55aa, yPos = -0.04, zPos = 0.74, xSpread = 0.52) {
+                const cheekMat = new THREE.MeshBasicMaterial({ color: colorHex });
+                [-1, 1].forEach(side => {
+                    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), cheekMat);
+                    cheek.scale.set(1.35, 0.75, 0.45);
+                    cheek.position.set(side * xSpread, yPos, zPos);
+                    cheek.rotation.y = side * 0.35;
+                    parent.add(cheek);
+                });
+            }
+
+            // 1. РОБО-ПЁСИК «СПАРКИ» (sphere_cyan)
+            if (skin.id === 'sphere_cyan') {
+                const bodyMat = new THREE.MeshStandardMaterial({ color: 0x00d8ff, emissive: 0x0044aa, emissiveIntensity: 0.4, roughness: 0.25, metalness: 0.3 });
+                const whiteFurMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+                const darkEarMat = new THREE.MeshStandardMaterial({ color: 0x004488, emissive: 0x002266, roughness: 0.3 });
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.84, 24, 24), bodyMat);
+                head.scale.set(1.04, 0.96, 1.0);
+                coreGroup.add(head);
+
+                // Белая мордочка и животик спереди
+                const snout = new THREE.Mesh(new THREE.SphereGeometry(0.36, 16, 16), whiteFurMat);
+                snout.scale.set(1.2, 0.85, 0.85);
+                snout.position.set(0, -0.10, 0.68);
+                coreGroup.add(snout);
+
+                const nose = new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), new THREE.MeshBasicMaterial({ color: 0x111827 }));
+                nose.scale.set(1.3, 0.9, 0.9);
+                nose.position.set(0, -0.02, 0.96);
+                coreGroup.add(nose);
+
+                // Розовый весёлый язычок
+                const tongue = new THREE.Mesh(new THREE.SphereGeometry(0.10, 10, 10), new THREE.MeshBasicMaterial({ color: 0xff5588 }));
+                tongue.scale.set(0.9, 1.4, 0.5);
+                tongue.position.set(0, -0.24, 0.86);
+                tongue.rotation.x = 0.3;
+                coreGroup.add(tongue);
+
+                addCartoonEyes(coreGroup, 0x00f3ff, 0.18, 0.76, 0.31);
+                addCuteCheeks(coreGroup, 0x00ffff, -0.02, 0.72, 0.54);
+
+                // Висячие собачьи ушки по бокам
+                [-1, 1].forEach(side => {
+                    const ear = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.72, 0.42), darkEarMat);
+                    ear.position.set(side * 0.82, 0.18, -0.05);
+                    ear.rotation.z = side * 0.32;
+                    ear.rotation.x = 0.15;
+                    coreGroup.add(ear);
+                });
+
+                // Затылок: пятнышко и виляющий голубой хвостик сзади (-Z)
+                const backSpot = new THREE.Mesh(new THREE.SphereGeometry(0.45, 14, 14), darkEarMat);
+                backSpot.position.set(0.2, 0.2, -0.48);
+                coreGroup.add(backSpot);
+
+                const tail = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.65, 10), whiteFurMat);
+                tail.position.set(0, 0.05, -0.92);
+                tail.rotation.x = -0.85;
+                tail.name = 'wag_tail';
+                coreGroup.add(tail);
+
+                // Ошейник с косточкой
+                const collar = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.07, 10, 28), new THREE.MeshBasicMaterial({ color: 0xff0055 }));
+                collar.rotation.x = Math.PI / 2;
+                collar.position.y = -0.45;
+                coreGroup.add(collar);
+
+                const halo = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.035, 8, 32), new THREE.MeshBasicMaterial({ color: 0x00f3ff }));
+                halo.rotation.x = Math.PI / 2;
+                halo.position.y = -0.68;
+                secondaryGroup.add(halo);
+
+            // 2. ЗАЙКА «БАННИ-БИТ» (cube_pink)
+            } else if (skin.id === 'cube_pink') {
+                const bunnyMat = new THREE.MeshStandardMaterial({ color: 0xff66b2, emissive: 0x99004d, emissiveIntensity: 0.45, roughness: 0.25 });
+                const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+                const cyanNeon = new THREE.MeshBasicMaterial({ color: 0x00f3ff });
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.82, 24, 24), bunnyMat);
+                head.scale.set(1.05, 0.95, 0.98);
+                coreGroup.add(head);
+
+                // Длинные заячьи ушки на макушке
+                [-1, 1].forEach(side => {
+                    const earGroup = new THREE.Group();
+                    const outerEar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 1.15, 14), bunnyMat);
+                    const innerEar = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.13, 0.95, 12), cyanNeon);
+                    innerEar.position.set(0, 0, 0.11);
+                    earGroup.add(outerEar, innerEar);
+                    earGroup.position.set(side * 0.36, 1.12, -0.05);
+                    earGroup.rotation.z = -side * 0.18;
+                    earGroup.rotation.x = -0.12;
+                    coreGroup.add(earGroup);
+                });
+
+                // Наушники DJ по бокам
+                const band = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.07, 10, 28, Math.PI), cyanNeon);
+                coreGroup.add(band);
+                [-1, 1].forEach(side => {
+                    const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.22, 16), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    cup.rotation.z = Math.PI / 2;
+                    cup.position.set(side * 0.88, 0.05, 0);
+                    coreGroup.add(cup);
+                });
+
+                // Личико зайки спереди (+Z)
+                addCartoonEyes(coreGroup, 0xff00aa, 0.14, 0.77, 0.30);
+                addCuteCheeks(coreGroup, 0xffb3d9, -0.06, 0.74, 0.50);
+
+                const nose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                nose.position.set(0, -0.02, 0.84);
+                coreGroup.add(nose);
+
+                // Два милых передних зубика
+                const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.06), whiteMat);
+                teeth.position.set(0, -0.14, 0.80);
+                coreGroup.add(teeth);
+
+                // Круглый пушистый хвостик-помпон сзади (-Z)
+                const pomTail = new THREE.Mesh(new THREE.SphereGeometry(0.30, 16, 16), whiteMat);
+                pomTail.position.set(0, -0.22, -0.82);
+                pomTail.name = 'wag_tail';
+                coreGroup.add(pomTail);
+
+                const musicRing = new THREE.Mesh(new THREE.TorusGeometry(1.22, 0.04, 8, 32), new THREE.MeshBasicMaterial({ color: 0xff66cc }));
+                musicRing.rotation.x = Math.PI / 2;
+                musicRing.position.y = -0.65;
+                secondaryGroup.add(musicRing);
+
+            // 3. КВАКША «ФРОГГИ» (torus_green)
+            } else if (skin.id === 'torus_green') {
+                const frogMat = new THREE.MeshStandardMaterial({ color: 0x00e65c, emissive: 0x006622, emissiveIntensity: 0.45, roughness: 0.25 });
+                const bellyMat = new THREE.MeshStandardMaterial({ color: 0xccffdd, roughness: 0.3 });
+                const goldMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.84, 24, 24), frogMat);
+                head.scale.set(1.12, 0.88, 0.98);
+                coreGroup.add(head);
+
+                // Светлое брюшко спереди
+                const belly = new THREE.Mesh(new THREE.SphereGeometry(0.62, 16, 16), bellyMat);
+                belly.scale.set(1.1, 0.8, 0.5);
+                belly.position.set(0, -0.18, 0.56);
+                coreGroup.add(belly);
+
+                // Большие выпуклые лягушачьи глазки на макушке (смотрят вперёд +Z)
+                [-1, 1].forEach(side => {
+                    const bump = new THREE.Mesh(new THREE.SphereGeometry(0.32, 16, 16), frogMat);
+                    bump.position.set(side * 0.44, 0.66, 0.22);
+                    coreGroup.add(bump);
+
+                    const eyeWhite = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+                    eyeWhite.position.set(side * 0.44, 0.68, 0.36);
+                    coreGroup.add(eyeWhite);
+
+                    const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.13, 12, 12), new THREE.MeshBasicMaterial({ color: 0x111111 }));
+                    pupil.position.set(side * 0.44, 0.68, 0.52);
+                    coreGroup.add(pupil);
+                });
+
+                // Золотая корона принца-лягушки на макушке
+                const crown = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.38, 5), goldMat);
+                crown.position.set(0, 0.86, 0);
+                coreGroup.add(crown);
+
+                // Широкая добрая улыбка спереди и румянец
+                const smile = new THREE.Mesh(new THREE.TorusGeometry(0.36, 0.045, 8, 20, Math.PI), new THREE.MeshBasicMaterial({ color: 0x004411 }));
+                smile.rotation.x = Math.PI + 0.2;
+                smile.position.set(0, -0.02, 0.83);
+                coreGroup.add(smile);
+                addCuteCheeks(coreGroup, 0xff66aa, -0.05, 0.76, 0.62);
+
+                // Сзади (-Z): кибер-ранец с двумя светящимися турбинами
+                [-1, 1].forEach(side => {
+                    const jet = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.55, 12), goldMat);
+                    jet.position.set(side * 0.28, 0, -0.82);
+                    jet.rotation.x = 0.25;
+                    coreGroup.add(jet);
+                });
+
+                const lilyPad = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.05, 8, 28), new THREE.MeshBasicMaterial({ color: 0x00ff88 }));
+                lilyPad.rotation.x = Math.PI / 2;
+                lilyPad.position.y = -0.65;
+                secondaryGroup.add(lilyPad);
+
+            // 4. РЫЖИЙ КОТ «БОРИС-БОТ» (neko_bot) — ГЛАВНАЯ ЗВЕЗДА!
+            } else if (skin.id === 'neko_bot') {
+                // Сочный тёплый рыжий мех, как у кота из рекламы
+                const gingerMat = new THREE.MeshStandardMaterial({
+                    color: 0xff7700,
+                    emissive: 0xcc3300,
+                    emissiveIntensity: 0.38,
+                    roughness: 0.28,
+                    metalness: 0.15
+                });
+                // Тёмно-рыжие тигровые полоски на затылке и спинке
+                const stripeMat = new THREE.MeshStandardMaterial({
+                    color: 0xb33c00,
+                    roughness: 0.35
+                });
+                // Белоснежная грудка, щёчки и кончик хвоста
+                const creamWhiteMat = new THREE.MeshStandardMaterial({
+                    color: 0xffffff,
+                    roughness: 0.25
+                });
+
+                // Круглая упитанная голова-тельце кота
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.86, 28, 28), gingerMat);
+                head.scale.set(1.08, 0.96, 1.0);
+                coreGroup.add(head);
+
+                // Рыжие кошачьи ушки с нежно-розовой серединкой (смотрят вперёд +Z)
+                const outerEarGeo = new THREE.ConeGeometry(0.38, 0.76, 4);
+                const innerEarGeo = new THREE.ConeGeometry(0.22, 0.52, 4);
+                const pinkInnerMat = new THREE.MeshBasicMaterial({ color: 0xff88aa });
+
+                [-1, 1].forEach(side => {
+                    const earGroup = new THREE.Group();
+                    const outerEar = new THREE.Mesh(outerEarGeo, gingerMat);
+                    outerEar.rotation.y = Math.PI / 4;
+                    const innerEar = new THREE.Mesh(innerEarGeo, pinkInnerMat);
+                    innerEar.rotation.y = Math.PI / 4;
+                    innerEar.position.set(0, -0.03, 0.11);
+                    earGroup.add(outerEar, innerEar);
+
+                    earGroup.position.set(side * 0.55, 0.78, 0.05);
+                    earGroup.rotation.z = -side * 0.34;
+                    coreGroup.add(earGroup);
+                });
+
+                // --- ПЕРЕДНЯЯ СТОРОНА (+Z): МОРДОЧКА РЫЖЕГО КОТА ---
+                // Белая пушистая манишка (грудка) спереди снизу
+                const chestBib = new THREE.Mesh(new THREE.SphereGeometry(0.52, 16, 16), creamWhiteMat);
+                chestBib.scale.set(1.15, 0.85, 0.55);
+                chestBib.position.set(0, -0.35, 0.58);
+                coreGroup.add(chestBib);
+
+                // Два пухлых белых подушечки-щёчки под носиком (усы растут отсюда)
+                [-1, 1].forEach(side => {
+                    const muzzlePuff = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), creamWhiteMat);
+                    muzzlePuff.scale.set(1.15, 0.9, 0.75);
+                    muzzlePuff.position.set(side * 0.19, -0.09, 0.74);
+                    coreGroup.add(muzzlePuff);
+                });
+
+                // Розовый носик сердечком/треугольником
+                const nose = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.13, 3), new THREE.MeshBasicMaterial({ color: 0xff5588 }));
+                nose.rotation.z = Math.PI;
+                nose.rotation.x = 0.25;
+                nose.position.set(0, 0.01, 0.92);
+                coreGroup.add(nose);
+
+                // Огромные выразительные изумрудно-зелёные глаза (как у рыжего кота Бориса!)
+                addCartoonEyes(coreGroup, 0x00e640, 0.20, 0.76, 0.33, 1.12);
+                addCuteCheeks(coreGroup, 0xff6699, -0.05, 0.75, 0.56);
+
+                // Белые торчащие усики по бокам мордочки
+                const whiskerGeo = new THREE.BoxGeometry(0.62, 0.035, 0.035);
+                const whiskerMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                [-1, 1].forEach(side => {
+                    for (let w = 0; w < 3; w++) {
+                        const whisker = new THREE.Mesh(whiskerGeo, whiskerMat);
+                        whisker.position.set(side * 0.65, -0.04 - (w - 1) * 0.10, 0.62);
+                        whisker.rotation.z = side * (0.18 - w * 0.16);
+                        whisker.rotation.y = -side * 0.35;
+                        coreGroup.add(whisker);
+                    }
+                });
+
+                // --- ЗАДНЯЯ СТОРОНА (-Z): ПОЛОСАТЫЙ ЗАТЫЛОК И ПУШИСТЫЙ ХВОСТ ---
+                // Три тёмно-рыжие полоски на затылке и спинке (которые видит игрок во время бега)
+                for (let s = 0; s < 3; s++) {
+                    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.75 - s * 0.12, 0.11, 0.25), stripeMat);
+                    stripe.position.set(0, 0.32 - s * 0.26, -0.76);
+                    coreGroup.add(stripe);
+                }
+
+                // Пушистый рыжий хвост трубой с белым кончиком (живо виляет при беге!)
+                const tailGroup = new THREE.Group();
+                const tailBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.85, 12), gingerMat);
+                tailBase.position.set(0, 0.35, 0);
+                const tailTip = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), creamWhiteMat);
+                tailTip.position.set(0, 0.80, 0);
+                tailGroup.add(tailBase, tailTip);
+                tailGroup.position.set(0, -0.15, -0.82);
+                tailGroup.rotation.x = -0.55;
+                tailGroup.name = 'wag_tail';
+                coreGroup.add(tailGroup);
+
+                // Стильный голубой ошейник с золотым колокольчиком спереди
+                const collar = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.065, 12, 32), new THREE.MeshBasicMaterial({ color: 0x00e5ff }));
+                collar.rotation.x = Math.PI / 2;
+                collar.position.y = -0.46;
+                coreGroup.add(collar);
+
+                const bell = new THREE.Mesh(new THREE.SphereGeometry(0.15, 12, 12), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
+                bell.position.set(0, -0.48, 0.82);
+                coreGroup.add(bell);
+
+                // Неоновый ховер-диск под лапками
+                const hoverRing = new THREE.Mesh(new THREE.TorusGeometry(1.15, 0.04, 8, 32), new THREE.MeshBasicMaterial({ color: 0xffaa00 }));
+                hoverRing.rotation.x = Math.PI / 2;
+                hoverRing.position.y = -0.68;
+                secondaryGroup.add(hoverRing);
+
+            // 5. ПАНДА «БАМБУК-Z» (chrono_spinner)
+            } else if (skin.id === 'chrono_spinner') {
+                const whiteFur = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 });
+                const blackFur = new THREE.MeshStandardMaterial({ color: 0x181824, roughness: 0.4 });
+                const bambooMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.86, 24, 24), whiteFur);
+                head.scale.set(1.08, 0.96, 1.0);
+                coreGroup.add(head);
+
+                // Круглые чёрные ушки панды
+                [-1, 1].forEach(side => {
+                    const ear = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 16), blackFur);
+                    ear.position.set(side * 0.64, 0.68, -0.05);
+                    coreGroup.add(ear);
+
+                    // Чёрные пятна вокруг глаз спереди (+Z)
+                    const patch = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14), blackFur);
+                    patch.scale.set(1.1, 1.25, 0.45);
+                    patch.position.set(side * 0.32, 0.16, 0.72);
+                    patch.rotation.z = side * 0.25;
+                    patch.rotation.y = side * 0.2;
+                    coreGroup.add(patch);
+                });
+
+                addCartoonEyes(coreGroup, 0x00ffcc, 0.16, 0.79, 0.31, 0.92);
+                addCuteCheeks(coreGroup, 0xff77aa, -0.08, 0.75, 0.54);
+
+                const nose = new THREE.Mesh(new THREE.SphereGeometry(0.11, 10, 10), blackFur);
+                nose.scale.set(1.3, 0.85, 0.85);
+                nose.position.set(0, -0.02, 0.88);
+                coreGroup.add(nose);
+
+                // Чёрный поясок-жилетка и маленький круглый хвостик сзади (-Z)
+                const backBand = new THREE.Mesh(new THREE.CylinderGeometry(0.84, 0.82, 0.36, 20), blackFur);
+                backBand.position.set(0, -0.22, -0.06);
+                coreGroup.add(backBand);
+
+                const pandaTail = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), blackFur);
+                pandaTail.position.set(0, -0.28, -0.82);
+                pandaTail.name = 'wag_tail';
+                coreGroup.add(pandaTail);
+
+                // Неоновый бамбук за спиной
+                const bamboo = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 1.35, 10), bambooMat);
+                bamboo.position.set(0.35, 0.15, -0.78);
+                bamboo.rotation.z = 0.45;
+                coreGroup.add(bamboo);
+
+                const auraRing = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.04, 8, 32), bambooMat);
+                auraRing.rotation.x = Math.PI / 2;
+                auraRing.position.y = -0.68;
+                secondaryGroup.add(auraRing);
+
+            // 6. ЛИСЁНОК «ФОКС-ДЖЕТ» (octa_gold)
+            } else if (skin.id === 'octa_gold') {
+                const foxMat = new THREE.MeshStandardMaterial({ color: 0xff6600, emissive: 0xb32400, emissiveIntensity: 0.4, roughness: 0.25 });
+                const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.25 });
+                const darkTipMat = new THREE.MeshBasicMaterial({ color: 0x1a0d00 });
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.84, 24, 24), foxMat);
+                head.scale.set(1.06, 0.94, 1.0);
+                coreGroup.add(head);
+
+                // Большие острые лисьи уши
+                [-1, 1].forEach(side => {
+                    const earGroup = new THREE.Group();
+                    const outer = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.88, 4), foxMat);
+                    outer.rotation.y = Math.PI / 4;
+                    const inner = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.60, 4), whiteMat);
+                    inner.rotation.y = Math.PI / 4;
+                    inner.position.set(0, -0.04, 0.11);
+                    earGroup.add(outer, inner);
+                    earGroup.position.set(side * 0.56, 0.80, 0);
+                    earGroup.rotation.z = -side * 0.38;
+                    coreGroup.add(earGroup);
+
+                    // Белые пушистые бакенбарды по бокам щёк
+                    const cheekFur = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.48, 4), whiteMat);
+                    cheekFur.position.set(side * 0.82, -0.15, 0.25);
+                    cheekFur.rotation.z = -side * 1.25;
+                    coreGroup.add(cheekFur);
+                });
+
+                // Вытянутый острый лисий носик спереди (+Z)
+                const snout = new THREE.Mesh(new THREE.ConeGeometry(0.38, 0.62, 16), foxMat);
+                snout.rotation.x = Math.PI / 2;
+                snout.position.set(0, -0.08, 0.82);
+                coreGroup.add(snout);
+
+                const noseTip = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), darkTipMat);
+                noseTip.position.set(0, -0.06, 1.12);
+                coreGroup.add(noseTip);
+
+                addCartoonEyes(coreGroup, 0xffd700, 0.18, 0.75, 0.32);
+
+                // Огромный пушистый лисий хвост с белым кончиком сзади (-Z)
+                const foxTail = new THREE.Group();
+                const tMain = new THREE.Mesh(new THREE.ConeGeometry(0.32, 0.95, 14), foxMat);
+                tMain.position.set(0, 0.35, 0);
+                const tTip = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.45, 14), whiteMat);
+                tTip.position.set(0, 0.78, 0);
+                foxTail.add(tMain, tTip);
+                foxTail.position.set(0, -0.22, -0.78);
+                foxTail.rotation.x = -0.75;
+                foxTail.name = 'wag_tail';
+                coreGroup.add(foxTail);
+
+                // 4 золотых кристалла на орбите вокруг лисёнка
+                for (let i = 0; i < 4; i++) {
+                    const sat = new THREE.Mesh(new THREE.OctahedronGeometry(0.20, 0), new THREE.MeshBasicMaterial({ color: 0xffd700 }));
+                    const a = (i / 4) * Math.PI * 2;
+                    sat.position.set(Math.cos(a) * 1.28, -0.35, Math.sin(a) * 1.28);
+                    secondaryGroup.add(sat);
+                }
+
+            // 7. ПИНГВИН «АЙС-ПИЛОТ» (star_fighter)
+            } else if (skin.id === 'star_fighter') {
+                const blueBackMat = new THREE.MeshStandardMaterial({ color: 0x1e64c8, emissive: 0x002266, emissiveIntensity: 0.4, roughness: 0.25 });
+                const whiteBellyMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+                const beakMat = new THREE.MeshBasicMaterial({ color: 0xffaa00 });
+
+                const body = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 24), blueBackMat);
+                body.scale.set(0.98, 1.06, 0.96);
+                coreGroup.add(body);
+
+                // Белое пузико и лицо спереди (+Z)
+                const faceWhite = new THREE.Mesh(new THREE.SphereGeometry(0.72, 20, 20), whiteBellyMat);
+                faceWhite.scale.set(0.95, 0.92, 0.55);
+                faceWhite.position.set(0, -0.05, 0.48);
+                coreGroup.add(faceWhite);
+
+                addCartoonEyes(coreGroup, 0x00d8ff, 0.18, 0.79, 0.28);
+                addCuteCheeks(coreGroup, 0xff66aa, -0.02, 0.78, 0.48);
+
+                // Жёлтый треугольный клювик спереди
+                const beak = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.36, 4), beakMat);
+                beak.rotation.x = Math.PI / 2;
+                beak.rotation.z = Math.PI / 4;
+                beak.position.set(0, 0.02, 0.94);
+                coreGroup.add(beak);
+
+                // Крутые авиаторские кибер-очки на лбу
+                [-1, 1].forEach(side => {
+                    const goggle = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.14, 16), new THREE.MeshBasicMaterial({ color: 0x00ffff }));
+                    goggle.rotation.x = Math.PI / 2;
+                    goggle.position.set(side * 0.27, 0.54, 0.66);
+                    coreGroup.add(goggle);
+
+                    // Крылышки-плавники по бокам
+                    const wing = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.68, 0.36), blueBackMat);
+                    wing.position.set(side * 0.86, -0.08, 0);
+                    wing.rotation.z = -side * 0.35;
+                    coreGroup.add(wing);
+                });
+
+                // Хвостик и ледяная турбина сзади (-Z)
+                const tail = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.42, 4), blueBackMat);
+                tail.position.set(0, -0.45, -0.82);
+                tail.rotation.x = -1.1;
+                tail.name = 'wag_tail';
+                coreGroup.add(tail);
+
+                const iceRing = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.045, 8, 32), new THREE.MeshBasicMaterial({ color: 0x66ffff }));
+                iceRing.rotation.x = Math.PI / 2;
+                iceRing.position.y = -0.68;
+                secondaryGroup.add(iceRing);
+
+            // 8. ДРАКОША «СПАРКС» (supernova_core)
+            } else {
+                const dragonMat = new THREE.MeshStandardMaterial({ color: 0xff2a00, emissive: 0x991100, emissiveIntensity: 0.45, roughness: 0.25 });
+                const goldMat = new THREE.MeshBasicMaterial({ color: 0xffd700 });
+                const cyanGlow = new THREE.MeshBasicMaterial({ color: 0x00ffff });
+
+                const head = new THREE.Mesh(new THREE.SphereGeometry(0.85, 24, 24), dragonMat);
+                head.scale.set(1.05, 0.96, 1.0);
+                coreGroup.add(head);
+
+                // Золотое брюшко спереди (+Z)
+                const belly = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), goldMat);
+                belly.scale.set(1.0, 0.85, 0.5);
+                belly.position.set(0, -0.28, 0.58);
+                coreGroup.add(belly);
+
+                addCartoonEyes(coreGroup, 0xffea00, 0.18, 0.78, 0.32, 1.08);
+                addCuteCheeks(coreGroup, 0xffaa00, -0.04, 0.75, 0.55);
+
+                // Ноздри-курносик спереди
+                [-1, 1].forEach(side => {
+                    const nostril = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), goldMat);
+                    nostril.position.set(side * 0.14, 0.02, 0.88);
+                    coreGroup.add(nostril);
+
+                    // Золотые рожки на макушке
+                    const horn = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.65, 8), goldMat);
+                    horn.position.set(side * 0.45, 0.82, -0.05);
+                    horn.rotation.z = -side * 0.35;
+                    horn.rotation.x = -0.2;
+                    coreGroup.add(horn);
+
+                    // Маленькие драконьи крылышки по бокам спинки
+                    const wing = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.75, 3), goldMat);
+                    wing.position.set(side * 0.88, 0.15, -0.25);
+                    wing.rotation.z = -side * 1.15;
+                    wing.rotation.y = -side * 0.4;
+                    coreGroup.add(wing);
+                });
+
+                // Гребень из золотых шипов вдоль затылка и спинки (-Z) и длинный хвост со стрелкой
+                for (let sp = 0; sp < 4; sp++) {
+                    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.30, 4), cyanGlow);
+                    const angle = -0.3 - sp * 0.42;
+                    spike.position.set(0, Math.cos(angle) * 0.86, Math.sin(angle) * 0.86);
+                    spike.rotation.x = angle;
+                    coreGroup.add(spike);
+                }
+
+                const dTail = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.85, 8), dragonMat);
+                dTail.position.set(0, -0.20, -0.92);
+                dTail.rotation.x = -0.95;
+                dTail.name = 'wag_tail';
+                coreGroup.add(dTail);
+
+                for (let s = 0; s < 5; s++) {
+                    const orb = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 10), s % 2 === 0 ? goldMat : cyanGlow);
+                    const a = (s / 5) * Math.PI * 2;
+                    orb.position.set(Math.cos(a) * 1.32, -0.35, Math.sin(a) * 1.32);
+                    secondaryGroup.add(orb);
+                }
+            }
+
+            // В забеге (isPreview === false) камера стоит сзади (+Z) и смотрит вперёд (-Z).
+            // Поэтому в обычном беге поворачиваем персонажа спинкой/затылком к камере (rotation.y = Math.PI),
+            // а во время прыжка он будет делать разворот на 360° и показывать свою милую мордочку!
+            if (!isPreview) {
+                coreGroup.rotation.y = Math.PI;
+            }
+
+            return { coreGroup, secondaryGroup, skin };
+        }
+
+        // ==========================================
+        // 5. ИНИЦИАЛИЗАЦИЯ THREE.JS СЦЕНЫ И ПОДИУМА ГАРАЖА
+        // ==========================================
+        const canvas = document.getElementById('game-canvas');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(ZONES[0].fogColor, 0.014);
+        scene.background = new THREE.Color(ZONES[0].fogColor);
+
+        const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 175);
+        camera.position.set(0, 4.5, 8.8);
+        camera.lookAt(0, 1.2, -14);
+
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.78);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.95);
+        dirLight.position.set(14, 28, 16);
+        scene.add(dirLight);
+
+        const playerLight = new THREE.PointLight(0x00f3ff, 2.4, 20);
+        playerLight.position.set(0, 2, 0);
+        scene.add(playerLight);
+
+        // Интерактивный 3D-подиум в Кибер-Гараже
+        const shopCanvas = document.getElementById('shop-preview-canvas');
+        const shopScene = new THREE.Scene();
+        const shopCamera = new THREE.PerspectiveCamera(50, 300 / 160, 0.1, 50);
+        shopCamera.position.set(0, 0.8, 3.8);
+        shopCamera.lookAt(0, 0, 0);
+
+        const shopRenderer = new THREE.WebGLRenderer({ canvas: shopCanvas, antialias: true, alpha: true });
+        shopScene.add(new THREE.AmbientLight(0xffffff, 0.9));
+        const shopDirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        shopDirLight.position.set(4, 6, 5);
+        shopScene.add(shopDirLight);
+
+        const shopTurntable = new THREE.Group();
+        shopScene.add(shopTurntable);
+
+        // Подиум под моделью в гараже
+        const pedestalMesh = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.4, 1.6, 0.15, 24),
+            new THREE.MeshBasicMaterial({ color: 0x00f3ff, wireframe: true })
+        );
+        pedestalMesh.position.y = -1.25;
+        shopScene.add(pedestalMesh);
+
+        let shopPreviewSkinId = playerData.selectedSkin;
+        let isDraggingPreview = false;
+        let prevDragX = 0;
+
+        shopCanvas.addEventListener('mousedown', (e) => {
+            isDraggingPreview = true;
+            prevDragX = e.clientX;
+        });
+        window.addEventListener('mouseup', () => { isDraggingPreview = false; });
+        window.addEventListener('mousemove', (e) => {
+            if (isDraggingPreview) {
+                const dx = e.clientX - prevDragX;
+                shopTurntable.rotation.y += dx * 0.015;
+                prevDragX = e.clientX;
+            }
+        });
+        shopCanvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                isDraggingPreview = true;
+                prevDragX = e.touches[0].clientX;
+            }
+        }, { passive: true });
+        window.addEventListener('touchend', () => { isDraggingPreview = false; });
+        window.addEventListener('touchmove', (e) => {
+            if (isDraggingPreview && e.touches.length > 0) {
+                const dx = e.touches[0].clientX - prevDragX;
+                shopTurntable.rotation.y += dx * 0.015;
+                prevDragX = e.touches[0].clientX;
+            }
+        }, { passive: true });
+
+        function updateShop3DPreview(skinId) {
+            shopPreviewSkinId = skinId;
+            while (shopTurntable.children.length > 0) {
+                const child = shopTurntable.children[0];
+                shopTurntable.remove(child);
+                disposeObject3D(child);
+            }
+            const nodes = createSkinMeshNodes(skinId, true);
+            shopTurntable.add(nodes.coreGroup);
+            shopTurntable.add(nodes.secondaryGroup);
+            shopTurntable.userData = nodes;
+            shopTurntable.rotation.y = 0.25; // Небольшой стильный поворот анфас к игроку
+            pedestalMesh.material.color.setHex(nodes.skin.color);
+        }
+
+        // ==========================================
+        // 6. ВИЛЯЮЩАЯ 3D-ТРАССА И АРХИТЕКТУРА 6 МИРОВ
+        // ==========================================
+        const LANE_WIDTH = 3.2;
+        const LANES = [-LANE_WIDTH, 0, LANE_WIDTH];
+
+        // Функция расчёта плавного изгиба дороги и горок (подъём / спуск) в зависимости от Z и пройденной фазы
+        let trackCurvePhase = 0;
+
+        function getTrackCurveX(z) {
+            const relZ = Math.min(0, z); // Изгибается впереди игрока (z < 0)
+            const distFactor = Math.pow(Math.abs(relZ) / 65, 1.35);
+            return (
+                Math.sin(trackCurvePhase * 0.55 + relZ * 0.024) * 5.2 +
+                Math.cos(trackCurvePhase * 0.28 + relZ * 0.012) * 3.0
+            ) * distFactor;
+        }
+
+        // Наклон дороги в текущей фазе: > 0 — подъём в горку (тяжелее ехать), < 0 — спуск с горки (разгон!)
+        function getCurrentHillSlope() {
+            const wave = Math.sin(trackCurvePhase * 0.24) + 0.45 * Math.cos(trackCurvePhase * 0.11);
+            // Небольшая плоская зона около нуля, чтобы горки чередовались с ровными участками
+            if (Math.abs(wave) < 0.28) return 0;
+            return THREE.MathUtils.clamp((wave - Math.sign(wave) * 0.28) * 0.95, -1.0, 1.0);
+        }
+
+        function getTrackCurveY(z) {
+            const relZ = Math.min(0, z);
+            const dist = Math.abs(relZ);
+            const slope = getCurrentHillSlope();
+            // Основной наклон горки (вверх или вниз впереди игрока) + плавный перегиб волны вдали
+            const hillElevation = slope * Math.pow(dist / 32, 1.28) * 3.8;
+            const rollerWave = Math.sin(trackCurvePhase * 0.36 + relZ * 0.032) * 1.35 * Math.min(1.4, dist / 45);
+            return hillElevation + rollerWave;
+        }
+
+        const trackGroup = new THREE.Group();
+        scene.add(trackGroup);
+
+        // Высокополигональная дорога для плавного виляния вершин
+        const ROAD_LENGTH = 240;
+        const ROAD_SEGS_Z = 96;
+        const roadGeo = new THREE.PlaneGeometry(12.5, ROAD_LENGTH, 12, ROAD_SEGS_Z);
+        const roadBasePos = roadGeo.attributes.position.array.slice();
+        const roadMat = new THREE.MeshStandardMaterial({
+            color: ZONES[0].roadColor,
+            roughness: 0.35,
+            metalness: 0.75
+        });
+        const roadMesh = new THREE.Mesh(roadGeo, roadMat);
+        roadMesh.rotation.x = -Math.PI / 2;
+        roadMesh.position.z = -95;
+        trackGroup.add(roadMesh);
+
+        // Динамические неоновые линии разметки полос и поперечные полосы скорости
+        const trackLinesGroup = new THREE.Group();
+        trackGroup.add(trackLinesGroup);
+
+        const railMat = new THREE.MeshBasicMaterial({ color: ZONES[0].gridColor });
+        const crossStrips = [];
+        const stripGeo = new THREE.BoxGeometry(12.2, 0.04, 0.22);
+        for (let i = 0; i < 30; i++) {
+            const strip = new THREE.Mesh(stripGeo, railMat);
+            strip.userData = { sharedGeo: true, sharedMat: true };
+            strip.position.set(0, 0.03, -i * 8 + 12);
+            trackLinesGroup.add(strip);
+            crossStrips.push(strip);
+        }
+
+        // Светящиеся гибкие бортики и разделители полос из сегментов
+        const railSegments = [];
+        const railSegGeo = new THREE.BoxGeometry(0.24, 0.3, 4.2);
+        const laneLineGeo = new THREE.BoxGeometry(0.08, 0.05, 4.1);
+        for (let s = 0; s < 56; s++) {
+            const z = 14 - s * 4.0;
+            const leftSeg = new THREE.Mesh(railSegGeo, railMat);
+            const rightSeg = new THREE.Mesh(railSegGeo, railMat);
+            const midLeft = new THREE.Mesh(laneLineGeo, railMat);
+            const midRight = new THREE.Mesh(laneLineGeo, railMat);
+            railSegments.push({ z, leftSeg, rightSeg, midLeft, midRight });
+            trackLinesGroup.add(leftSeg, rightSeg, midLeft, midRight);
+        }
+
+        function updateWindingTrackGeometry(effectiveSpeed, dt) {
+            trackCurvePhase += effectiveSpeed * dt * 0.045;
+
+            // Деформируем вершины полотна дороги по кривой
+            const posAttr = roadGeo.attributes.position;
+            for (let i = 0; i < posAttr.count; i++) {
+                const ix = i * 3;
+                const baseX = roadBasePos[ix];
+                const baseY = roadBasePos[ix + 1]; // После поворота на -PI/2 это мировая ось -Z
+                const worldZ = roadMesh.position.z - baseY;
+                const curveX = getTrackCurveX(worldZ);
+                const curveY = getTrackCurveY(worldZ);
+
+                posAttr.array[ix] = baseX + curveX;
+                posAttr.array[ix + 2] = curveY; // Высота после поворота PlaneGeometry
+            }
+            posAttr.needsUpdate = true;
+
+            // Обновляем поперечные неоновые полосы
+            crossStrips.forEach(strip => {
+                strip.position.z += effectiveSpeed * dt;
+                if (strip.position.z > 16) strip.position.z -= 240;
+                strip.position.x = getTrackCurveX(strip.position.z);
+                strip.position.y = 0.03 + getTrackCurveY(strip.position.z);
+            });
+
+            // Обновляем сегменты бортиков и линий разметки вдоль изгиба дороги
+            railSegments.forEach(seg => {
+                const cx = getTrackCurveX(seg.z);
+                const cy = getTrackCurveY(seg.z);
+                const nextCx = getTrackCurveX(seg.z - 4.0);
+                const yaw = Math.atan2(nextCx - cx, -4.0);
+
+                seg.leftSeg.position.set(cx - 6.0, cy + 0.16, seg.z);
+                seg.rightSeg.position.set(cx + 6.0, cy + 0.16, seg.z);
+                seg.midLeft.position.set(cx - LANE_WIDTH * 0.5, cy + 0.03, seg.z);
+                seg.midRight.position.set(cx + LANE_WIDTH * 0.5, cy + 0.03, seg.z);
+
+                seg.leftSeg.rotation.y = yaw;
+                seg.rightSeg.rotation.y = yaw;
+                seg.midLeft.rotation.y = yaw;
+                seg.midRight.rotation.y = yaw;
+            });
+        }
+
+        const sceneryItems = [];
+
+        function createBiomeProp(sceneryType, colorHex) {
+            const propGroup = new THREE.Group();
+
+            if (sceneryType === 'city') {
+                const h = 14 + Math.random() * 14;
+                const boxGeo = new THREE.BoxGeometry(2.4, h, 2.4);
+                const box = new THREE.Mesh(boxGeo, new THREE.MeshStandardMaterial({ color: 0x070b1a, roughness: 0.3 }));
+                box.position.y = h / 2 - 3;
+                propGroup.add(box);
+
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(boxGeo),
+                    new THREE.LineBasicMaterial({ color: colorHex })
+                );
+                edges.position.y = h / 2 - 3;
+                propGroup.add(edges);
+
+            } else if (sceneryType === 'jungle') {
+                const trunkGeo = new THREE.CylinderGeometry(0.35, 0.6, 8, 6);
+                const trunk = new THREE.Mesh(trunkGeo, new THREE.MeshStandardMaterial({ color: 0x0c2818 }));
+                trunk.position.y = 2;
+                propGroup.add(trunk);
+
+                for (let layer = 0; layer < 3; layer++) {
+                    const canopyGeo = new THREE.ConeGeometry(2.8 - layer * 0.6, 3.2, 6);
+                    const canopyMat = new THREE.MeshStandardMaterial({
+                        color: 0x00ff66,
+                        emissive: 0x005522,
+                        wireframe: layer === 1,
+                        flatShading: true
+                    });
+                    const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+                    canopy.position.y = 5.5 + layer * 2.1;
+                    propGroup.add(canopy);
+                }
+
+            } else if (sceneryType === 'cave') {
+                for (let c = 0; c < 3; c++) {
+                    const h = 6 + Math.random() * 9;
+                    const crysGeo = new THREE.ConeGeometry(1.1, h, 5);
+                    const crysMat = new THREE.MeshStandardMaterial({
+                        color: 0xd900ff,
+                        emissive: 0x550088,
+                        roughness: 0.15,
+                        flatShading: true
+                    });
+                    const crys = new THREE.Mesh(crysGeo, crysMat);
+                    crys.position.set((c - 1) * 1.1, h / 2 - 2, (Math.random() - 0.5) * 1.5);
+                    crys.rotation.z = (Math.random() - 0.5) * 0.45;
+                    propGroup.add(crys);
+                }
+
+            } else if (sceneryType === 'magma') {
+                const spireGeo = new THREE.ConeGeometry(2.2, 16, 4);
+                const spire = new THREE.Mesh(spireGeo, new THREE.MeshStandardMaterial({
+                    color: 0x1a0500,
+                    emissive: 0x661100,
+                    flatShading: true
+                }));
+                spire.position.y = 5;
+                propGroup.add(spire);
+
+                const lavaRing = new THREE.Mesh(
+                    new THREE.TorusGeometry(2.0, 0.15, 8, 16),
+                    new THREE.MeshBasicMaterial({ color: 0xff4500 })
+                );
+                lavaRing.rotation.x = Math.PI / 2;
+                lavaRing.position.y = 3.5;
+                propGroup.add(lavaRing);
+
+            } else if (sceneryType === 'arctic') {
+                const iceGeo = new THREE.OctahedronGeometry(2.8, 0);
+                const iceMat = new THREE.MeshStandardMaterial({
+                    color: 0x88ffff,
+                    emissive: 0x005577,
+                    roughness: 0.1,
+                    metalness: 0.3,
+                    flatShading: true
+                });
+                const ice = new THREE.Mesh(iceGeo, iceMat);
+                ice.scale.set(1, 2.8, 1);
+                ice.position.y = 4;
+                propGroup.add(ice);
+
+            } else {
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(2.4, 0.12, 10, 24),
+                    new THREE.MeshBasicMaterial({ color: colorHex, wireframe: true })
+                );
+                ring.position.y = 6;
+                propGroup.add(ring);
+
+                const cube = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(1.4, 0),
+                    new THREE.MeshStandardMaterial({ color: 0xffcc00, emissive: 0x883300, flatShading: true })
+                );
+                cube.position.y = 6;
+                propGroup.add(cube);
+                propGroup.userData.spin = true;
+            }
+
+            return propGroup;
+        }
+
+        function rebuildBiomeScenery(zoneIdx) {
+            sceneryItems.forEach(item => {
+                scene.remove(item);
+                disposeObject3D(item);
+            });
+            sceneryItems.length = 0;
+
+            const zone = ZONES[zoneIdx % ZONES.length];
+            for (let i = 0; i < 16; i++) {
+                const prop = createBiomeProp(zone.sceneryType, zone.gridColor);
+                const side = i % 2 === 0 ? -1 : 1;
+                const baseX = side * (10.5 + Math.random() * 5);
+                const z = -i * 14;
+                prop.userData.baseX = baseX;
+                prop.position.set(baseX + getTrackCurveX(z), getTrackCurveY(z), z);
+                scene.add(prop);
+                sceneryItems.push(prop);
+            }
+        }
+
+        // Атмосферные частицы
+        const starsGeo = new THREE.BufferGeometry();
+        const starCount = 480;
+        const starPos = new Float32Array(starCount * 3);
+        for (let i = 0; i < starCount * 3; i += 3) {
+            starPos[i] = (Math.random() - 0.5) * 140;
+            starPos[i + 1] = Math.random() * 55 - 5;
+            starPos[i + 2] = -Math.random() * 165;
+        }
+        starsGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+        const starsMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.38, transparent: true, opacity: 0.85 });
+        const starField = new THREE.Points(starsGeo, starsMat);
+        scene.add(starField);
+
+        // ==========================================
+        // 7. МОДЕЛЬ ИГРОКА И ЭФФЕКТЫ (КОЛЬЦА ДВОЙНОГО ПРЫЖКА, ЧАСТИЦЫ)
+        // ==========================================
+        const playerGroup = new THREE.Group();
+        playerGroup.position.set(0, 1.0, 0);
+        scene.add(playerGroup);
+
+        let coreMesh = null;
+        let secondaryAnimMesh = null;
+        let shieldBubbleMesh = null;
+
+        function buildPlayerModel(skinId) {
+            while (playerGroup.children.length > 0) {
+                const child = playerGroup.children[0];
+                playerGroup.remove(child);
+                disposeObject3D(child);
+            }
+
+            const { coreGroup, secondaryGroup, skin } = createSkinMeshNodes(skinId, false);
+            coreMesh = coreGroup;
+            secondaryAnimMesh = secondaryGroup;
+
+            playerGroup.add(coreMesh);
+            playerGroup.add(secondaryAnimMesh);
+
+            const shieldGeo = new THREE.SphereGeometry(1.6, 20, 20);
+            const shieldMat = new THREE.MeshBasicMaterial({
+                color: 0x00f3ff,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.55
+            });
+            shieldBubbleMesh = new THREE.Mesh(shieldGeo, shieldMat);
+            shieldBubbleMesh.visible = gameState.shieldTimer > 0;
+            playerGroup.add(shieldBubbleMesh);
+
+            playerLight.color.setHex(skin.color);
+        }
+
+        const particles = [];
+        const shockwaves = [];
+        const particleGeo = new THREE.BoxGeometry(0.22, 0.22, 0.22);
+
+        function spawnExplosion(pos, colorHex, count = 18, speedScale = 1) {
+            for (let i = 0; i < count; i++) {
+                const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 1 });
+                const p = new THREE.Mesh(particleGeo, mat);
+                p.position.copy(pos);
+                p.userData = {
+                    vx: (Math.random() - 0.5) * 10 * speedScale,
+                    vy: (Math.random() * 7 + 2) * speedScale,
+                    vz: (Math.random() - 0.5) * 10 * speedScale,
+                    life: 1.0,
+                    decay: 1.6 + Math.random() * 1.2
+                };
+                scene.add(p);
+                particles.push(p);
+            }
+        }
+
+        // Расширяющееся неоновое кольцо при двойном прыжке
+        function spawnJumpRingBurst(pos, colorHex = 0xff00a0) {
+            const ringGeo = new THREE.RingGeometry(0.4, 0.75, 24);
+            const ringMat = new THREE.MeshBasicMaterial({
+                color: colorHex,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95
+            });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.rotation.x = Math.PI / 2;
+            ring.position.set(pos.x, Math.max(0.2, pos.y - 0.4), pos.z);
+            ring.userData = { scale: 1.0, opacity: 0.95 };
+            scene.add(ring);
+            shockwaves.push(ring);
+        }
+
+        function spawnTrailParticle() {
+            const skin = SKINS.find(s => s.id === playerData.selectedSkin) || SKINS[0];
+            const mat = new THREE.MeshBasicMaterial({ color: skin.color, transparent: true, opacity: 0.8 });
+            const p = new THREE.Mesh(particleGeo, mat);
+            p.position.set(
+                playerGroup.position.x + (Math.random() - 0.5) * 0.55,
+                playerGroup.position.y + (Math.random() - 0.5) * 0.4,
+                playerGroup.position.z + 0.75
+            );
+            p.userData = {
+                vx: (Math.random() - 0.5) * 1.2,
+                vy: (Math.random() - 0.5) * 1.2,
+                vz: 8,
+                life: 0.5,
+                decay: 2.2
+            };
+            scene.add(p);
+            particles.push(p);
+        }
+
+        function updateParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.position.x += p.userData.vx * dt;
+                p.position.y += p.userData.vy * dt;
+                p.position.z += p.userData.vz * dt;
+                p.rotation.x += 5 * dt;
+                p.rotation.y += 5 * dt;
+                p.userData.life -= p.userData.decay * dt;
+
+                if (p.userData.life <= 0) {
+                    scene.remove(p);
+                    p.material.dispose();
+                    particles.splice(i, 1);
+                } else {
+                    p.material.opacity = p.userData.life;
+                    p.scale.setScalar(Math.max(0.1, p.userData.life));
+                }
+            }
+
+            for (let i = shockwaves.length - 1; i >= 0; i--) {
+                const sw = shockwaves[i];
+                sw.userData.scale += dt * 9.5;
+                sw.userData.opacity -= dt * 2.6;
+                if (sw.userData.opacity <= 0) {
+                    scene.remove(sw);
+                    sw.geometry.dispose();
+                    sw.material.dispose();
+                    shockwaves.splice(i, 1);
+                } else {
+                    sw.scale.setScalar(sw.userData.scale);
+                    sw.material.opacity = sw.userData.opacity;
+                }
+            }
+        }
+
+        // ==========================================
+        // 8. ПЕРЕМЕННЫЕ ИГРОВОГО ПРОЦЕССА
+        // ==========================================
+        const ZONE_LENGTH_METERS = 500; // Смена мира каждые 500 метров
+
+        const gameState = {
+            status: 'MENU', // MENU, PLAYING, PAUSED, GAMEOVER
+            score: 0,
+            distance: 0,
+            runCrystals: 0,
+            speed: 19,
+            baseSpeed: 19,
+            maxSpeed: 36,
+            accel: 0.16,
+            currentLane: 1,
+            targetX: 0,
+            vy: 0,
+            gravity: -40,
+            jumpForce: 16.5,
+            jumpsRemaining: 2,
+            maxJumps: 2,
+            isGrounded: true,
+            isSlamming: false,
+            jumpSpinAngle: 0,
+            jumpSpinSpeed: 0,
+            hearts: 3,
+            maxHearts: 3,
+            invulnTimer: 0,
+            comboCount: 0,
+            comboMultiplier: 1,
+            comboTimer: 0,
+            shieldTimer: 0,
+            magnetTimer: 0,
+            boostTimer: 0,
+            overdriveCharge: 0,
+            overdriveTimer: 0,
+            currentZoneIndex: 0,
+            nextSpawnZ: -45,
+            cameraShake: 0
+        };
+
+        const obstacles = [];
+        const collectibles = [];
+
+        buildPlayerModel(playerData.selectedSkin);
+        rebuildBiomeScenery(playerData.selectedStartZone);
+
+        function getActiveSkinPerk() {
+            const skin = SKINS.find(s => s.id === playerData.selectedSkin) || SKINS[0];
+            return skin.perkType;
+        }
+
+        function addOverdriveCharge(amount) {
+            if (gameState.overdriveTimer > 0) return;
+            gameState.overdriveCharge = Math.min(100, gameState.overdriveCharge + amount);
+            if (gameState.overdriveCharge >= 100) {
+                gameState.overdriveCharge = 0;
+                gameState.overdriveTimer = 7.5;
+                sound.playPowerup();
+                spawnJumpRingBurst(playerGroup.position, 0xffaa00);
+                spawnExplosion(playerGroup.position, 0xffdd00, 28, 1.3);
+                createFloatingText('🔥 ГИПЕР-ДРАЙВ x2 АКТИВЕН! 🔥', 'text-amber-300');
+            }
+        }
+
+        // ==========================================
+        // 9. СПАВН ПРЕПЯТСТВИЙ, КРИСТАЛЛОВ И АПТЕЧЕК
+        // ==========================================
+        function createObstacleRow(zPos) {
+            const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
+            const patternRoll = Math.random();
+
+            if (patternRoll < 0.35) {
+                const freeLane = Math.floor(Math.random() * 3);
+                for (let lane = 0; lane < 3; lane++) {
+                    if (lane === freeLane) {
+                        if (Math.random() < 0.55) {
+                            spawnSingleObstacle('low_laser', lane, zPos);
+                            spawnCrystalArc(lane, zPos);
+                        } else {
+                            spawnCrystalLine(lane, zPos);
+                        }
+                    } else {
+                        if (diff.id === 'chill' && lane === (freeLane + 1) % 3) {
+                            spawnSingleObstacle('low_laser', lane, zPos);
+                        } else {
+                            spawnSingleObstacle('high_block', lane, zPos);
+                        }
+                    }
+                }
+            } else if (patternRoll < 0.65) {
+                const count = diff.id === 'chill' ? (Math.random() < 0.65 ? 1 : 2) : (Math.random() < 0.5 ? 2 : 3);
+                const lanesOrder = [0, 1, 2].sort(() => Math.random() - 0.5);
+                for (let i = 0; i < count; i++) {
+                    spawnSingleObstacle('low_laser', lanesOrder[i], zPos);
+                    if (i === 0) spawnCrystalArc(lanesOrder[i], zPos);
+                }
+            } else if (patternRoll < 0.85) {
+                const startLane = Math.floor(Math.random() * 3);
+                spawnSingleObstacle('drone', startLane, zPos);
+                const crystalLane = (startLane + 1) % 3;
+                spawnCrystalLine(crystalLane, zPos);
+            } else {
+                const boostLane = Math.floor(Math.random() * 3);
+                spawnBoostPad(boostLane, zPos);
+                spawnCrystalLine(boostLane, zPos - 4);
+                const blockLane = (boostLane + 1) % 3;
+                spawnSingleObstacle('high_block', blockLane, zPos);
+            }
+
+            // Бонусы и зелёные Сердечки-аптечки
+            if (Math.random() < 0.22) {
+                const powerLane = Math.floor(Math.random() * 3);
+                const roll = Math.random();
+                let type = 'shield';
+                if (roll < 0.38) type = 'shield';
+                else if (roll < 0.74) type = 'magnet';
+                else type = 'heart';
+                spawnPowerupItem(type, powerLane, zPos - 8);
+            }
+        }
+
+        function spawnSingleObstacle(type, laneIndex, zPos) {
+            const xPos = LANES[laneIndex];
+            const group = new THREE.Group();
+
+            if (type === 'low_laser') {
+                const barGeo = new THREE.BoxGeometry(2.5, 0.85, 0.45);
+                const barMat = new THREE.MeshStandardMaterial({
+                    color: 0xff0055,
+                    emissive: 0xff0044,
+                    emissiveIntensity: 0.9,
+                    roughness: 0.2
+                });
+                const bar = new THREE.Mesh(barGeo, barMat);
+                bar.position.y = 0.5;
+                group.add(bar);
+
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(barGeo),
+                    new THREE.LineBasicMaterial({ color: 0xffffff })
+                );
+                edges.position.y = 0.5;
+                group.add(edges);
+
+                group.position.set(xPos + getTrackCurveX(zPos), getTrackCurveY(zPos), zPos);
+                group.userData = { type: 'low_laser', baseX: xPos, baseY: 0, width: 2.3, height: 0.95, depth: 0.55, nearMissed: false };
+
+            } else if (type === 'high_block') {
+                const blockGeo = new THREE.BoxGeometry(2.4, 3.8, 1.3);
+                const blockMat = new THREE.MeshStandardMaterial({
+                    color: 0x1a103c,
+                    emissive: 0x8800ff,
+                    emissiveIntensity: 0.55,
+                    roughness: 0.3
+                });
+                const block = new THREE.Mesh(blockGeo, blockMat);
+                block.position.y = 1.9;
+                group.add(block);
+
+                const edges = new THREE.LineSegments(
+                    new THREE.EdgesGeometry(blockGeo),
+                    new THREE.LineBasicMaterial({ color: 0xff00a0 })
+                );
+                edges.position.y = 1.9;
+                group.add(edges);
+
+                group.position.set(xPos + getTrackCurveX(zPos), getTrackCurveY(zPos), zPos);
+                group.userData = { type: 'high_block', baseX: xPos, baseY: 0, width: 2.2, height: 3.8, depth: 1.3, nearMissed: false };
+
+            } else if (type === 'drone') {
+                const droneGeo = new THREE.OctahedronGeometry(0.9, 1);
+                const droneMat = new THREE.MeshStandardMaterial({
+                    color: 0xff3300,
+                    emissive: 0xff2200,
+                    emissiveIntensity: 0.85,
+                    flatShading: true
+                });
+                const droneMesh = new THREE.Mesh(droneGeo, droneMat);
+                droneMesh.position.y = 1.2;
+                group.add(droneMesh);
+
+                const ring = new THREE.Mesh(
+                    new THREE.TorusGeometry(1.15, 0.08, 8, 24),
+                    new THREE.MeshBasicMaterial({ color: 0xffaa00 })
+                );
+                ring.rotation.x = Math.PI / 2;
+                ring.position.y = 1.2;
+                group.add(ring);
+
+                const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
+                const droneSpeed = diff.id === 'chill' ? 3.1 : (diff.id === 'drive' ? 4.3 : 5.5);
+
+                group.position.set(xPos + getTrackCurveX(zPos), getTrackCurveY(zPos), zPos);
+                group.userData = {
+                    type: 'drone',
+                    baseX: xPos,
+                    baseY: 0,
+                    width: 1.8,
+                    height: 2.0,
+                    depth: 1.4,
+                    vx: (Math.random() < 0.5 ? 1 : -1) * droneSpeed,
+                    nearMissed: false
+                };
+            }
+
+            scene.add(group);
+            obstacles.push(group);
+        }
+
+        function spawnBoostPad(laneIndex, zPos) {
+            const xPos = LANES[laneIndex];
+            const padGeo = new THREE.BoxGeometry(2.4, 0.12, 3.8);
+            const padMat = new THREE.MeshBasicMaterial({ color: 0x00ff88 });
+            const pad = new THREE.Mesh(padGeo, padMat);
+            pad.position.set(xPos + getTrackCurveX(zPos), 0.07 + getTrackCurveY(zPos), zPos);
+            pad.userData = { type: 'boost_pad', baseX: xPos, baseY: 0.07, triggered: false };
+            scene.add(pad);
+            collectibles.push(pad);
+        }
+
+        function spawnCrystalLine(laneIndex, zStart) {
+            const xPos = LANES[laneIndex];
+            for (let i = 0; i < 4; i++) {
+                spawnSingleCrystal(xPos, 1.0, zStart - i * 3.0);
+            }
+        }
+
+        function spawnCrystalArc(laneIndex, zCenter) {
+            const xPos = LANES[laneIndex];
+            const offsets = [
+                { dz: 3.2, y: 1.2 },
+                { dz: 1.6, y: 2.4 },
+                { dz: 0, y: 3.1 },
+                { dz: -1.6, y: 2.4 },
+                { dz: -3.2, y: 1.2 }
+            ];
+            offsets.forEach(pt => {
+                spawnSingleCrystal(xPos, pt.y, zCenter + pt.dz);
+            });
+        }
+
+        const crystalGeo = new THREE.OctahedronGeometry(0.52, 0);
+        const crystalMat = new THREE.MeshStandardMaterial({
+            color: 0xffdd00,
+            emissive: 0xffaa00,
+            emissiveIntensity: 0.85,
+            roughness: 0.1,
+            metalness: 0.9,
+            flatShading: true
+        });
+
+        function spawnSingleCrystal(x, y, z) {
+            const mesh = new THREE.Mesh(crystalGeo, crystalMat);
+            mesh.position.set(x + getTrackCurveX(z), y + getTrackCurveY(z), z);
+            mesh.userData = { type: 'crystal', baseX: x, baseY: y, sharedGeo: true, sharedMat: true, magnetized: false };
+            scene.add(mesh);
+            collectibles.push(mesh);
+        }
+
+        function spawnPowerupItem(powerType, laneIndex, zPos) {
+            const xPos = LANES[laneIndex];
+            const group = new THREE.Group();
+
+            let colorHex = 0x00f3ff;
+            if (powerType === 'magnet') colorHex = 0xff00a0;
+            else if (powerType === 'heart') colorHex = 0x00ff66;
+
+            const core = new THREE.Mesh(
+                new THREE.TorusGeometry(0.62, 0.16, 12, 24),
+                new THREE.MeshBasicMaterial({ color: colorHex })
+            );
+            group.add(core);
+
+            if (powerType === 'heart') {
+                // Зеленый крестик аптечки внутри
+                const vBar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.72, 0.24), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
+                const hBar = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.24, 0.24), new THREE.MeshBasicMaterial({ color: 0x00ff66 }));
+                group.add(vBar);
+                group.add(hBar);
+            } else {
+                const inner = new THREE.Mesh(
+                    new THREE.OctahedronGeometry(0.38, 0),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                );
+                group.add(inner);
+            }
+
+            group.position.set(xPos + getTrackCurveX(zPos), 1.3 + getTrackCurveY(zPos), zPos);
+            group.userData = { type: powerType, baseX: xPos, baseY: 1.3 };
+            scene.add(group);
+            collectibles.push(group);
+        }
+
+        // ==========================================
+        // 10. UI И ОБНОВЛЕНИЕ ИНТЕРФЕЙСА
+        // ==========================================
+        const floatingContainer = document.getElementById('floating-container');
+
+        function createFloatingText(text, colorClass = 'text-yellow-300') {
+            const el = document.createElement('div');
+            el.className = `floating-msg font-cyber text-lg md:text-2xl ${colorClass} drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)]`;
+            el.style.left = `${44 + (Math.random() - 0.5) * 14}%`;
+            el.style.top = `${45 + (Math.random() - 0.5) * 10}%`;
+            el.innerText = text;
+            floatingContainer.appendChild(el);
+            setTimeout(() => {
+                if (el.parentNode) el.parentNode.removeChild(el);
+            }, 1050);
+        }
+
+        function triggerZoneBanner(zoneTitle, subText = '★ БОНУС +30 КРИСТАЛЛОВ ★') {
+            const banner = document.getElementById('zone-banner');
+            document.getElementById('zone-banner-title').innerText = zoneTitle;
+            document.getElementById('zone-banner-sub').innerText = subText;
+            banner.classList.remove('hidden', 'zone-banner-anim');
+            void banner.offsetWidth;
+            banner.classList.add('zone-banner-anim');
+        }
+
+        function applyZoneTheme(zoneIdx) {
+            const zone = ZONES[zoneIdx % ZONES.length];
+            railMat.color.setHex(zone.gridColor);
+            roadMesh.material.color.setHex(zone.roadColor);
+            scene.fog.color.setHex(zone.fogColor);
+            scene.background.setHex(zone.fogColor);
+            rebuildBiomeScenery(zoneIdx);
+        }
+
+        function renderHeartsHUD() {
+            const container = document.getElementById('hud-hearts');
+            let html = '';
+            for (let i = 0; i < gameState.maxHearts; i++) {
+                if (i < gameState.hearts) {
+                    html += `<i class="fa-solid fa-heart text-rose-500 drop-shadow-[0_0_8px_rgba(244,63,94,0.85)] heart-pulse"></i>`;
+                } else {
+                    html += `<i class="fa-regular fa-heart text-slate-600"></i>`;
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        function updateHUD() {
+            document.getElementById('hud-score').innerText = Math.floor(gameState.score);
+            document.getElementById('hud-dist').innerText = Math.floor(gameState.distance);
+            document.getElementById('hud-crystals').innerText = playerData.crystals + gameState.runCrystals;
+            document.getElementById('hud-combo').innerText = `x${gameState.comboMultiplier}`;
+
+            const comboPercent = Math.min(100, (gameState.comboTimer / 4.0) * 100);
+            document.getElementById('combo-bar').style.width = `${comboPercent}%`;
+
+            const jumpEl = document.getElementById('hud-jumps');
+            if (gameState.jumpsRemaining === 2) {
+                jumpEl.innerText = '2x Прыжок готов';
+                jumpEl.className = 'text-cyan-200';
+            } else if (gameState.jumpsRemaining === 1) {
+                jumpEl.innerText = '1x Рывок в воздухе!';
+                jumpEl.className = 'text-yellow-300';
+            } else {
+                jumpEl.innerText = 'В полёте';
+                jumpEl.className = 'text-slate-400';
+            }
+
+            const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
+            document.getElementById('btn-hud-diff').innerText = diff.name;
+
+            const activeZone = ZONES[gameState.currentZoneIndex % ZONES.length];
+            const distInZone = gameState.distance % ZONE_LENGTH_METERS;
+            const pct = playerData.lockZone ? 100 : Math.min(100, Math.floor((distInZone / ZONE_LENGTH_METERS) * 100));
+            document.getElementById('hud-zone-name').innerText = activeZone.name;
+            document.getElementById('hud-zone-pct').innerText = playerData.lockZone ? 'ЗАКРЕПЛЁН' : `${pct}%`;
+            document.getElementById('hud-zone-bar').style.width = `${pct}%`;
+
+            const shieldBadge = document.getElementById('badge-shield');
+            if (gameState.shieldTimer > 0) {
+                shieldBadge.classList.remove('hidden');
+                document.getElementById('shield-timer').innerText = `${gameState.shieldTimer.toFixed(1)}с`;
+            } else {
+                shieldBadge.classList.add('hidden');
+            }
+
+            const magnetBadge = document.getElementById('badge-magnet');
+            if (gameState.magnetTimer > 0) {
+                magnetBadge.classList.remove('hidden');
+                document.getElementById('magnet-timer').innerText = `${gameState.magnetTimer.toFixed(1)}с`;
+            } else {
+                magnetBadge.classList.add('hidden');
+            }
+
+            document.getElementById('badge-boost').classList.toggle('hidden', gameState.boostTimer <= 0);
+
+            const overdriveBadge = document.getElementById('badge-overdrive');
+            if (gameState.overdriveTimer > 0) {
+                overdriveBadge.classList.remove('hidden');
+                document.getElementById('overdrive-timer').innerText = `ГИПЕР-ДРАЙВ ${gameState.overdriveTimer.toFixed(1)}с`;
+                document.getElementById('hud-overdrive-bar').style.width = `${(gameState.overdriveTimer / 7.5) * 100}%`;
+                document.getElementById('hud-overdrive-pct').innerText = 'MAX!';
+            } else {
+                overdriveBadge.classList.add('hidden');
+                const odPct = Math.floor(gameState.overdriveCharge);
+                document.getElementById('hud-overdrive-bar').style.width = `${odPct}%`;
+                document.getElementById('hud-overdrive-pct').innerText = `${odPct}%`;
+            }
+
+            const slopeBadge = document.getElementById('badge-slope');
+            const slopeVal = getCurrentHillSlope();
+            if (slopeVal > 0.22) {
+                slopeBadge.classList.remove('hidden');
+                slopeBadge.className = 'neon-box px-2.5 py-1 rounded-xl border-amber-400 flex items-center gap-1.5';
+                document.getElementById('slope-icon').className = 'fa-solid fa-angles-up text-amber-400 text-sm';
+                document.getElementById('slope-text').className = 'text-[11px] font-cyber text-amber-200';
+                document.getElementById('slope-text').innerText = 'ПОДЪЁМ В ГОРКУ (ТЯЖЕЛЕЕ)';
+            } else if (slopeVal < -0.22) {
+                slopeBadge.classList.remove('hidden');
+                slopeBadge.className = 'neon-box px-2.5 py-1 rounded-xl border-emerald-400 flex items-center gap-1.5';
+                document.getElementById('slope-icon').className = 'fa-solid fa-angles-down text-emerald-400 text-sm animate-bounce';
+                document.getElementById('slope-text').className = 'text-[11px] font-cyber text-emerald-200';
+                document.getElementById('slope-text').innerText = 'С ГОРКИ! +СКОРОСТЬ';
+            } else {
+                slopeBadge.classList.add('hidden');
+            }
+        }
+
+        // Быстрая смена сложности из верхней панели во время игры
+        document.getElementById('btn-hud-diff').addEventListener('click', () => {
+            const order = ['chill', 'drive', 'hardcore'];
+            const nextIdx = (order.indexOf(playerData.selectedDifficulty) + 1) % order.length;
+            playerData.selectedDifficulty = order[nextIdx];
+            saveData();
+
+            const diff = DIFFICULTIES[playerData.selectedDifficulty];
+            gameState.baseSpeed = diff.baseSpeed;
+            gameState.maxSpeed = diff.maxSpeed;
+            gameState.accel = diff.accel;
+            gameState.speed = Math.min(gameState.maxSpeed, Math.max(gameState.baseSpeed, gameState.speed));
+            sound.playCrystal(3);
+            createFloatingText(`РЕЖИМ: ${diff.name}`, 'text-cyan-300');
+            updateHUD();
+        });
+
+        // ==========================================
+        // 11. УПРАВЛЕНИЕ ИГРОКОМ
+        // ==========================================
+        function moveLane(dir) {
+            if (gameState.status !== 'PLAYING') return;
+            const nextLane = gameState.currentLane + dir;
+            if (nextLane >= 0 && nextLane <= 2) {
+                gameState.currentLane = nextLane;
+                gameState.targetX = LANES[gameState.currentLane];
+                sound.playWhoosh();
+            }
+        }
+
+        function jump() {
+            if (gameState.status !== 'PLAYING') return;
+
+            if (gameState.isGrounded) {
+                gameState.vy = gameState.jumpForce;
+                gameState.isGrounded = false;
+                gameState.jumpsRemaining = gameState.maxJumps - 1;
+                gameState.jumpSpinAngle = 0;
+                gameState.jumpSpinSpeed = Math.PI * 2.5; // Плавный полный оборот 360° точно за время прыжка
+                sound.playJump(false);
+                spawnJumpRingBurst(playerGroup.position, 0x00f3ff);
+                spawnExplosion(playerGroup.position, 0x00f3ff, 8, 0.5);
+            } else if (gameState.jumpsRemaining > 0) {
+                gameState.vy = gameState.jumpForce * 0.94;
+                gameState.jumpsRemaining--;
+                gameState.jumpSpinAngle = 0;
+                gameState.jumpSpinSpeed = Math.PI * 2.8; // Один полный оборот 360° на втором прыжке
+                sound.playJump(true);
+                spawnJumpRingBurst(playerGroup.position, 0xff00a0);
+                spawnExplosion(playerGroup.position, 0xff00a0, 14, 0.7);
+                createFloatingText('2x ПРЫЖОК!', 'text-cyan-300');
+            }
+        }
+
+        function slamDown() {
+            if (gameState.status !== 'PLAYING') return;
+            if (!gameState.isGrounded) {
+                gameState.vy = -32;
+                gameState.isSlamming = true;
+                sound.playSlam();
+            }
+        }
+
+        function triggerSlamShockwave() {
+            gameState.cameraShake = 0.38;
+            spawnJumpRingBurst(playerGroup.position, 0x00ff88);
+            spawnJumpRingBurst(playerGroup.position, 0x00f3ff);
+            spawnExplosion(playerGroup.position, 0x00ff88, 20, 1.1);
+
+            let destroyedAny = false;
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                const distZ = Math.abs(obs.position.z - playerGroup.position.z);
+                const distX = Math.abs(obs.position.x - playerGroup.position.x);
+                if (distZ < 9.5 && distX < 4.5 && (obs.userData.type === 'low_laser' || obs.userData.type === 'drone')) {
+                    spawnExplosion(obs.position, 0xffaa00, 18, 1.2);
+                    scene.remove(obs);
+                    disposeObject3D(obs);
+                    obstacles.splice(i, 1);
+                    destroyedAny = true;
+                    gameState.score += 80;
+                    addOverdriveCharge(15);
+                }
+            }
+
+            // Притягиваем ближайшие кристаллы ударной волной
+            collectibles.forEach(item => {
+                if (item.userData.type === 'crystal' && Math.abs(item.position.z) < 16) {
+                    item.userData.magnetized = true;
+                }
+            });
+
+            if (destroyedAny) {
+                sound.playPowerup();
+                createFloatingText('💥 УДАРНЫЙ СЛЭМ +80!', 'text-emerald-300');
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Escape' || e.code === 'KeyP') {
+                if (gameState.status === 'PLAYING') pauseGame();
+                else if (gameState.status === 'PAUSED') resumeGame();
+                return;
+            }
+            if (e.code === 'KeyM') {
+                const tr = sound.cycleMusicTrack();
+                syncMusicButtons(tr);
+                return;
+            }
+            if (gameState.status !== 'PLAYING') return;
+
+            if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
+                moveLane(-1);
+            } else if (e.code === 'ArrowRight' || e.code === 'KeyD') {
+                moveLane(1);
+            } else if (e.code === 'ArrowUp' || e.code === 'KeyW' || e.code === 'Space') {
+                e.preventDefault();
+                jump();
+            } else if (e.code === 'ArrowDown' || e.code === 'KeyS') {
+                slamDown();
+            }
+        });
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (gameState.status !== 'PLAYING' || e.changedTouches.length === 0) return;
+            const dx = e.changedTouches[0].clientX - touchStartX;
+            const dy = e.changedTouches[0].clientY - touchStartY;
+            const absX = Math.abs(dx);
+            const absY = Math.abs(dy);
+
+            if (Math.max(absX, absY) > 25) {
+                if (absX > absY) moveLane(dx > 0 ? 1 : -1);
+                else {
+                    if (dy < 0) jump();
+                    else slamDown();
+                }
+            } else {
+                jump();
+            }
+        }, { passive: true });
+
+        // Мгновенный отклик на мобильных кнопках через pointerdown
+        document.getElementById('btn-left').addEventListener('pointerdown', (e) => { e.preventDefault(); moveLane(-1); });
+        document.getElementById('btn-right').addEventListener('pointerdown', (e) => { e.preventDefault(); moveLane(1); });
+        document.getElementById('btn-jump').addEventListener('pointerdown', (e) => { e.preventDefault(); jump(); });
+        document.getElementById('btn-slam').addEventListener('pointerdown', (e) => { e.preventDefault(); slamDown(); });
+
+        // ==========================================
+        // 12. УПРАВЛЕНИЕ СОСТОЯНИЯМИ ИГРЫ И МЕНЮ
+        // ==========================================
+        function clearWorldEntities() {
+            obstacles.forEach(o => {
+                scene.remove(o);
+                disposeObject3D(o);
+            });
+            obstacles.length = 0;
+            collectibles.forEach(c => {
+                scene.remove(c);
+                disposeObject3D(c);
+            });
+            collectibles.length = 0;
+        }
+
+        function startGame() {
+            sound.init();
+            clearWorldEntities();
+
+            const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
+            const perk = getActiveSkinPerk();
+
+            gameState.status = 'PLAYING';
+            gameState.score = 0;
+            gameState.distance = 0;
+            gameState.runCrystals = 0;
+            gameState.baseSpeed = diff.baseSpeed;
+            gameState.speed = diff.baseSpeed;
+            gameState.maxSpeed = diff.maxSpeed;
+            gameState.accel = diff.accel;
+
+            const extraHeart = (perk === 'extra_heart' || perk === 'supernova_ultimate') ? 1 : 0;
+            gameState.maxHearts = diff.hearts + extraHeart;
+            gameState.hearts = gameState.maxHearts;
+            gameState.invulnTimer = 0;
+
+            gameState.jumpForce = perk === 'high_jump' ? 18.2 : 16.5;
+            gameState.gravity = perk === 'high_jump' ? -34 : -40;
+
+            gameState.currentLane = 1;
+            gameState.targetX = 0;
+            gameState.vy = 0;
+            gameState.isGrounded = true;
+            gameState.isSlamming = false;
+            gameState.jumpsRemaining = gameState.maxJumps;
+            gameState.comboCount = 0;
+            gameState.comboMultiplier = 1;
+            gameState.comboTimer = 0;
+            gameState.shieldTimer = 0;
+            gameState.magnetTimer = 0;
+            gameState.boostTimer = 0;
+            gameState.overdriveCharge = 0;
+            gameState.overdriveTimer = 0;
+            gameState.currentZoneIndex = playerData.selectedStartZone || 0;
+            gameState.nextSpawnZ = -48;
+
+            playerGroup.position.set(0, 1.0, 0);
+            playerGroup.visible = true;
+            buildPlayerModel(playerData.selectedSkin);
+            applyZoneTheme(gameState.currentZoneIndex);
+            renderHeartsHUD();
+            sound.startMusicTrack(sound.currentTrackIdx);
+
+            for (let i = 0; i < 6; i++) {
+                createObstacleRow(gameState.nextSpawnZ);
+                gameState.nextSpawnZ -= diff.baseGap;
+            }
+
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('pause-modal').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('touch-controls').classList.remove('hidden');
+
+            triggerZoneBanner(ZONES[gameState.currentZoneIndex].name, `РЕЖИМ: ${diff.name} • ПОЕХАЛИ!`);
+            updateHUD();
+        }
+
+        function pauseGame() {
+            if (gameState.status !== 'PLAYING') return;
+            gameState.status = 'PAUSED';
+            if (sound.activeAudio) sound.activeAudio.pause();
+            document.getElementById('pause-modal').classList.remove('hidden');
+        }
+
+        function resumeGame() {
+            if (gameState.status !== 'PAUSED') return;
+            clock.getDelta(); // Сбрасываем накопленную дельту времени паузы
+            gameState.status = 'PLAYING';
+            if (sound.activeAudio && !sound.muted) sound.activeAudio.play().catch(() => {});
+            document.getElementById('pause-modal').classList.add('hidden');
+        }
+
+        function triggerGameOver() {
+            gameState.status = 'GAMEOVER';
+            sound.playCrash();
+            gameState.cameraShake = 0.7;
+
+            const skin = SKINS.find(s => s.id === playerData.selectedSkin) || SKINS[0];
+            spawnExplosion(playerGroup.position, skin.color, 35, 1.5);
+            playerGroup.visible = false;
+
+            playerData.crystals += gameState.runCrystals;
+            const finalScore = Math.floor(gameState.score);
+            const isNewRecord = finalScore > playerData.highScore;
+            if (isNewRecord) {
+                playerData.highScore = finalScore;
+            }
+            saveData();
+
+            document.getElementById('go-score').innerText = finalScore;
+            document.getElementById('go-dist').innerText = Math.floor(gameState.distance);
+            document.getElementById('go-crystals').innerText = gameState.runCrystals;
+            document.getElementById('new-record-badge').classList.toggle('hidden', !isNewRecord);
+
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('touch-controls').classList.add('hidden');
+
+            setTimeout(() => {
+                document.getElementById('gameover-modal').classList.remove('hidden');
+            }, 600);
+        }
+
+        function updateMenuUI() {
+            document.getElementById('menu-highscore').innerText = playerData.highScore;
+            document.getElementById('menu-crystals').innerText = playerData.crystals;
+
+            const skin = SKINS.find(s => s.id === playerData.selectedSkin) || SKINS[0];
+            document.getElementById('menu-skin-name').innerText = skin.name;
+            document.getElementById('menu-skin-perk').innerText = `Суперспособность: ${skin.perkText}`;
+            document.getElementById('menu-skin-icon').innerHTML = `<i class="fa-solid ${skin.icon}"></i>`;
+
+            const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
+            document.getElementById('diff-desc-label').innerText = diff.desc;
+
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                const d = btn.getAttribute('data-diff');
+                if (d === playerData.selectedDifficulty) {
+                    btn.className = 'diff-btn p-2.5 rounded-2xl border-2 text-left transition flex flex-col justify-between cursor-pointer bg-cyan-950/75 border-cyan-400 shadow-[0_0_15px_rgba(0,243,255,0.3)]';
+                } else {
+                    btn.className = 'diff-btn p-2.5 rounded-2xl border text-left transition flex flex-col justify-between cursor-pointer bg-slate-900/75 border-slate-700 hover:border-slate-500';
+                }
+            });
+
+            // Кнопка фиксации мира
+            const lockBtn = document.getElementById('btn-lock-zone');
+            const lockTxt = document.getElementById('lock-zone-text');
+            if (playerData.lockZone) {
+                lockBtn.className = 'px-2.5 py-1 rounded-xl border border-amber-400 bg-amber-950/60 text-[10px] font-cyber text-amber-300 flex items-center gap-1.5 transition cursor-pointer';
+                lockTxt.innerText = 'Выбранный мир закреплён 🔒';
+            } else {
+                lockBtn.className = 'px-2.5 py-1 rounded-xl border border-cyan-500/40 bg-slate-900/80 text-[10px] font-cyber text-cyan-300 flex items-center gap-1.5 transition cursor-pointer';
+                lockTxt.innerText = 'Автосмена каждые 500м: ВКЛ';
+            }
+
+            // Карточки 6 миров
+            const biomeGrid = document.getElementById('biome-selector');
+            biomeGrid.innerHTML = '';
+            ZONES.forEach(z => {
+                const isSelected = playerData.selectedStartZone === z.id;
+                const btn = document.createElement('button');
+                btn.className = `p-2.5 rounded-xl border text-left transition flex items-center gap-2.5 cursor-pointer ${
+                    isSelected
+                        ? 'bg-pink-950/60 border-pink-400 shadow-[0_0_12px_rgba(255,0,160,0.35)]'
+                        : 'bg-slate-900/75 border-slate-700 hover:border-slate-500'
+                }`;
+                btn.innerHTML = `
+                    <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0 border border-white/20"
+                         style="background: ${z.accentHex}25; color: ${z.accentHex}">
+                        <i class="fa-solid ${z.icon}"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <div class="font-cyber text-xs text-white truncate">${z.shortName}</div>
+                        <div class="text-[10px] text-slate-400">Уровень ${z.id + 1}</div>
+                    </div>
+                `;
+                btn.addEventListener('click', () => {
+                    playerData.selectedStartZone = z.id;
+                    saveData();
+                    applyZoneTheme(z.id);
+                    sound.init();
+                    sound.playCrystal(2);
+                    updateMenuUI();
+                });
+                biomeGrid.appendChild(btn);
+            });
+        }
+
+        document.getElementById('btn-lock-zone').addEventListener('click', () => {
+            playerData.lockZone = !playerData.lockZone;
+            saveData();
+            sound.init();
+            sound.playCrystal(4);
+            updateMenuUI();
+        });
+
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                playerData.selectedDifficulty = btn.getAttribute('data-diff');
+                saveData();
+                sound.init();
+                sound.playCrystal(3);
+                updateMenuUI();
+            });
+        });
+
+        function showMainMenu() {
+            gameState.status = 'MENU';
+            clearWorldEntities();
+            playerGroup.position.set(0, 1.0, 0);
+            playerGroup.visible = true;
+            buildPlayerModel(playerData.selectedSkin);
+            applyZoneTheme(playerData.selectedStartZone);
+            updateMenuUI();
+
+            document.getElementById('hud').classList.add('hidden');
+            document.getElementById('touch-controls').classList.add('hidden');
+            document.getElementById('pause-modal').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+        }
+
+        // ==========================================
+        // 13. КИБЕР-ГАРАЖ С 3D-ПОДИУМОМ
+        // ==========================================
+        function renderShop(previewId = shopPreviewSkinId) {
+            document.getElementById('shop-crystals').innerText = playerData.crystals;
+            const previewSkin = SKINS.find(s => s.id === previewId) || SKINS[0];
+            updateShop3DPreview(previewSkin.id);
+
+            document.getElementById('preview-skin-title').innerText = previewSkin.name;
+            document.getElementById('preview-skin-desc').innerText = previewSkin.desc;
+            document.getElementById('preview-skin-perk').innerText = `Суперспособность: ${previewSkin.perkText}`;
+
+            const isPreviewUnlocked = playerData.unlockedSkins.includes(previewSkin.id);
+            const isPreviewSelected = playerData.selectedSkin === previewSkin.id;
+
+            const statusBadge = document.getElementById('preview-skin-status');
+            if (isPreviewSelected) {
+                statusBadge.className = 'px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-cyber text-xs';
+                statusBadge.innerText = 'АКТИВЕН';
+            } else if (isPreviewUnlocked) {
+                statusBadge.className = 'px-2.5 py-1 rounded-lg bg-emerald-500/20 border border-emerald-400 text-emerald-300 font-cyber text-xs';
+                statusBadge.innerText = 'ОТКРЫТ';
+            } else {
+                statusBadge.className = 'px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400 text-amber-300 font-cyber text-xs';
+                statusBadge.innerText = `${previewSkin.price} 💎`;
+            }
+
+            const actionBox = document.getElementById('preview-action-container');
+            if (isPreviewSelected) {
+                actionBox.innerHTML = `<div class="text-xs font-cyber text-cyan-300">✓ Этот бот сейчас выбран для забегов</div>`;
+            } else if (isPreviewUnlocked) {
+                actionBox.innerHTML = `<button id="btn-equip-preview" class="neon-btn px-5 py-2 rounded-xl font-cyber text-slate-950 text-xs cursor-pointer">ВЗЯТЬ В ЗАБЕГ</button>`;
+                document.getElementById('btn-equip-preview').addEventListener('click', () => {
+                    playerData.selectedSkin = previewSkin.id;
+                    saveData();
+                    buildPlayerModel(previewSkin.id);
+                    sound.playCrystal(4);
+                    renderShop(previewSkin.id);
+                    updateMenuUI();
+                });
+            } else {
+                const canAfford = playerData.crystals >= previewSkin.price;
+                actionBox.innerHTML = `<button id="btn-buy-preview" class="px-5 py-2 rounded-xl font-cyber text-xs flex items-center gap-2 transition ${
+                    canAfford ? 'bg-amber-400 hover:bg-amber-300 text-slate-950 cursor-pointer shadow-lg' : 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                }"><i class="fa-solid fa-gem"></i> РАЗБЛОКИРОВАТЬ ЗА ${previewSkin.price} 💎</button>`;
+                if (canAfford) {
+                    document.getElementById('btn-buy-preview').addEventListener('click', () => {
+                        playerData.crystals -= previewSkin.price;
+                        playerData.unlockedSkins.push(previewSkin.id);
+                        playerData.selectedSkin = previewSkin.id;
+                        saveData();
+                        buildPlayerModel(previewSkin.id);
+                        sound.playPowerup();
+                        renderShop(previewSkin.id);
+                        updateMenuUI();
+                    });
+                }
+            }
+
+            const grid = document.getElementById('skins-grid');
+            grid.innerHTML = '';
+
+            SKINS.forEach(skin => {
+                const isUnlocked = playerData.unlockedSkins.includes(skin.id);
+                const isSelected = playerData.selectedSkin === skin.id;
+                const isPreviewing = previewSkin.id === skin.id;
+                const hexStr = '#' + skin.color.toString(16).padStart(6, '0');
+
+                const card = document.createElement('div');
+                card.className = `p-3 rounded-2xl border transition flex items-center justify-between gap-2.5 cursor-pointer ${
+                    isPreviewing
+                        ? 'bg-cyan-950/70 border-cyan-400 shadow-[0_0_14px_rgba(0,243,255,0.3)]'
+                        : 'bg-slate-900/85 border-slate-700 hover:border-slate-500'
+                }`;
+
+                card.innerHTML = `
+                    <div class="flex items-center gap-2.5 overflow-hidden">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 border border-white/20"
+                             style="background: radial-gradient(circle, ${hexStr}55 0%, transparent 80%); color: ${hexStr};">
+                            <i class="fa-solid ${skin.icon}"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="font-cyber text-xs md:text-sm text-white truncate">${skin.name}</div>
+                            <div class="text-[10px] text-emerald-300 font-bold truncate">${skin.perkText}</div>
+                        </div>
+                    </div>
+                    <div class="shrink-0">
+                        ${
+                            isSelected
+                                ? `<span class="px-2.5 py-1 rounded-lg bg-cyan-500/20 border border-cyan-400 text-cyan-300 font-cyber text-[10px]">АКТИВЕН</span>`
+                                : isUnlocked
+                                ? `<span class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-200 font-cyber text-[10px]">ОТКРЫТ</span>`
+                                : `<span class="px-2.5 py-1 rounded-lg bg-amber-500/20 border border-amber-400/50 text-amber-300 font-cyber text-[10px] flex items-center gap-1"><i class="fa-solid fa-gem"></i> ${skin.price}</span>`
+                        }
+                    </div>
+                `;
+
+                card.addEventListener('click', () => {
+                    sound.playCrystal(2);
+                    if (isUnlocked && playerData.selectedSkin !== skin.id) {
+                        playerData.selectedSkin = skin.id;
+                        saveData();
+                        buildPlayerModel(skin.id);
+                        updateMenuUI();
+                    }
+                    renderShop(skin.id);
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        document.getElementById('btn-gift-crystals').addEventListener('click', () => {
+            sound.init();
+            playerData.crystals += 500;
+            saveData();
+            sound.playPowerup();
+            renderShop(shopPreviewSkinId);
+            updateMenuUI();
+        });
+
+        function openShop() {
+            sound.init();
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('shop-modal').classList.remove('hidden');
+            const rect = shopCanvas.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                shopRenderer.setSize(rect.width, rect.height, false);
+                shopCamera.aspect = rect.width / rect.height;
+                shopCamera.updateProjectionMatrix();
+            }
+            renderShop(playerData.selectedSkin);
+        }
+
+        function closeShop() {
+            document.getElementById('shop-modal').classList.add('hidden');
+            if (gameState.status === 'GAMEOVER') {
+                showMainMenu();
+            } else {
+                updateMenuUI();
+            }
+        }
+
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-retry').addEventListener('click', startGame);
+        document.getElementById('btn-open-shop').addEventListener('click', openShop);
+        document.getElementById('btn-go-shop').addEventListener('click', openShop);
+        document.getElementById('btn-close-shop').addEventListener('click', closeShop);
+        document.getElementById('btn-shop-back').addEventListener('click', closeShop);
+        document.getElementById('btn-pause').addEventListener('click', pauseGame);
+        document.getElementById('btn-resume').addEventListener('click', resumeGame);
+        document.getElementById('btn-quit-menu').addEventListener('click', showMainMenu);
+        document.getElementById('btn-go-menu').addEventListener('click', showMainMenu);
+
+        function syncMuteButtons(isMuted) {
+            const cls = isMuted ? 'fa-solid fa-volume-xmark text-pink-400' : 'fa-solid fa-volume-high';
+            document.querySelector('#btn-mute-hud i').className = cls + ' text-base md:text-lg';
+            document.querySelector('#btn-mute-menu i').className = cls;
+        }
+
+        function syncMusicButtons(trackObj) {
+            if (!trackObj) return;
+            const hudTxt = document.getElementById('hud-track-name');
+            const menuTxt = document.getElementById('menu-track-name');
+            const shortLabel = trackObj.file ? `ТРЕК ${trackObj.id + 1}` : 'МУЗ ВЫКЛ';
+            if (hudTxt) hudTxt.innerText = shortLabel;
+            if (menuTxt) menuTxt.innerText = shortLabel;
+            if (gameState.status === 'PLAYING') {
+                createFloatingText(`🎵 ${trackObj.name}`, 'text-pink-300');
+            }
+        }
+
+        document.getElementById('btn-music-hud').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack());
+        });
+        document.getElementById('btn-music-menu').addEventListener('click', () => {
+            syncMusicButtons(sound.cycleMusicTrack());
+        });
+
+        document.getElementById('btn-mute-hud').addEventListener('click', () => {
+            syncMuteButtons(sound.toggleMute());
+        });
+        document.getElementById('btn-mute-menu').addEventListener('click', () => {
+            sound.init();
+            syncMuteButtons(sound.toggleMute());
+        });
+
+        // ==========================================
+        // 14. ГЛАВНЫЙ ИГРОВОЙ ЦИКЛ (ANIMATION LOOP)
+        // ==========================================
+        const clock = new THREE.Clock();
+        let trailSpawnAccumulator = 0;
+
+        function updateGame(dt) {
+            // Анимация 3D-подиума в гараже, если он открыт
+            if (!document.getElementById('shop-modal').classList.contains('hidden')) {
+                if (!isDraggingPreview) {
+                    // В гараже плавно поворачиваем модель так, чтобы большую часть времени была видна мордочка, но можно было рассмотреть и хвостик
+                    shopTurntable.rotation.y += dt * 0.85;
+                }
+                if (shopTurntable.userData && shopTurntable.userData.coreGroup) {
+                    const previewTail = shopTurntable.userData.coreGroup.getObjectByName('wag_tail');
+                    if (previewTail) {
+                        previewTail.rotation.z = Math.sin(clock.elapsedTime * 7.5) * 0.35;
+                    }
+                }
+                if (shopTurntable.userData && shopTurntable.userData.secondaryGroup) {
+                    shopTurntable.userData.secondaryGroup.rotation.y += dt * 1.8;
+                }
+                shopRenderer.render(shopScene, shopCamera);
+            }
+
+            // Плавный вираж и наклон камеры вдоль изгибающейся трассы и горок
+            const aheadCurveX = getTrackCurveX(-18);
+            const aheadCurveY = getTrackCurveY(-18);
+            const targetCamRoll = THREE.MathUtils.clamp(-aheadCurveX * 0.012 - (playerGroup.position.x - gameState.targetX) * 0.025, -0.14, 0.14);
+
+            if (gameState.cameraShake > 0) {
+                gameState.cameraShake -= dt * 2.2;
+                camera.position.x = (Math.random() - 0.5) * gameState.cameraShake;
+                camera.position.y = 4.5 + (Math.random() - 0.5) * gameState.cameraShake;
+            } else {
+                camera.position.x = THREE.MathUtils.lerp(camera.position.x, playerGroup.position.x * 0.42 + aheadCurveX * 0.12, dt * 6);
+                camera.position.y = THREE.MathUtils.lerp(camera.position.y, 4.5 + (playerGroup.position.y - 1.0) * 0.25 - aheadCurveY * 0.08, dt * 6);
+            }
+            camera.lookAt(aheadCurveX * 0.28, 1.2 + aheadCurveY * 0.35, -14);
+            camera.rotation.z = THREE.MathUtils.lerp(camera.rotation.z, targetCamRoll, dt * 5);
+
+            if (gameState.status === 'MENU') {
+                if (coreMesh) {
+                    // В главном меню все персонажи повёрнуты лицом к игроку и живо покачиваются
+                    coreMesh.rotation.y = Math.sin(clock.elapsedTime * 1.6) * 0.48;
+                    coreMesh.rotation.z = Math.cos(clock.elapsedTime * 2.2) * 0.08;
+                    const menuTail = coreMesh.getObjectByName('wag_tail');
+                    if (menuTail) {
+                        menuTail.rotation.z = Math.sin(clock.elapsedTime * 7.0) * 0.35;
+                    }
+                }
+                if (secondaryAnimMesh) {
+                    secondaryAnimMesh.rotation.y -= dt * 1.4;
+                }
+                updateWindingTrackGeometry(14, dt);
+                sceneryItems.forEach(item => {
+                    item.position.z += 12 * dt;
+                    if (item.position.z > 16) item.position.z -= 16 * 14;
+                    item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                    item.position.y = getTrackCurveY(item.position.z);
+                });
+                updateParticles(dt);
+                return;
+            }
+
+            if (gameState.status !== 'PLAYING') {
+                updateParticles(dt);
+                return;
+            }
+
+            const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
+            const perk = getActiveSkinPerk();
+
+            // Влияние горки на скорость: в горку (slope > 0) — замедление до -25%, с горки (slope < 0) — весёлый разгон до +32%!
+            const hillSlope = getCurrentHillSlope();
+            const slopeSpeedMult = hillSlope > 0
+                ? (1.0 - hillSlope * 0.25)
+                : (1.0 + Math.abs(hillSlope) * 0.32);
+
+            const speedBoostMult = gameState.overdriveTimer > 0 ? 1.5 : (gameState.boostTimer > 0 ? 1.38 : 1.0);
+            const effectiveSpeed = gameState.speed * speedBoostMult * slopeSpeedMult;
+            gameState.speed = Math.min(gameState.maxSpeed, gameState.speed + dt * gameState.accel);
+
+            const deltaDist = effectiveSpeed * dt * 0.45;
+            const prevZonesPassed = Math.floor(gameState.distance / ZONE_LENGTH_METERS);
+            gameState.distance += deltaDist;
+            const newZonesPassed = Math.floor(gameState.distance / ZONE_LENGTH_METERS);
+
+            const overdriveScoreMult = gameState.overdriveTimer > 0 ? 2.0 : 1.0;
+            gameState.score += deltaDist * gameState.comboMultiplier * diff.scoreMult * overdriveScoreMult;
+
+            // Переход в следующий Мир каждые 500 метров (если не включена блокировка мира)
+            if (newZonesPassed > prevZonesPassed) {
+                if (!playerData.lockZone) {
+                    gameState.currentZoneIndex = (gameState.currentZoneIndex + 1) % ZONES.length;
+                    const zoneObj = ZONES[gameState.currentZoneIndex];
+                    applyZoneTheme(gameState.currentZoneIndex);
+                    gameState.runCrystals += 30;
+                    triggerZoneBanner(zoneObj.name, '★ ПРОРЫВ 500М: +30 💎 ★');
+                } else {
+                    gameState.runCrystals += 30;
+                    triggerZoneBanner(ZONES[gameState.currentZoneIndex].name, '★ РУБЕЖ 500М ПРОЙДЕН: +30 💎 ★');
+                }
+                sound.playPowerup();
+            }
+
+            if (gameState.invulnTimer > 0) {
+                gameState.invulnTimer -= dt;
+                playerGroup.visible = Math.floor(gameState.invulnTimer * 14) % 2 === 0;
+                if (gameState.invulnTimer <= 0) {
+                    playerGroup.visible = true;
+                }
+            }
+
+            if (gameState.comboTimer > 0) {
+                gameState.comboTimer -= dt;
+                if (gameState.comboTimer <= 0) {
+                    gameState.comboCount = 0;
+                    gameState.comboMultiplier = 1;
+                }
+            }
+            if (gameState.shieldTimer > 0) gameState.shieldTimer -= dt;
+            if (gameState.magnetTimer > 0) gameState.magnetTimer -= dt;
+            if (gameState.boostTimer > 0) gameState.boostTimer -= dt;
+            if (gameState.overdriveTimer > 0) gameState.overdriveTimer -= dt;
+
+            const prevX = playerGroup.position.x;
+            playerGroup.position.x = THREE.MathUtils.lerp(playerGroup.position.x, gameState.targetX, dt * 14);
+            const dx = playerGroup.position.x - prevX;
+
+            if (coreMesh) {
+                // Анимация виляния хвостика во время бега
+                const tailObj = coreMesh.getObjectByName('wag_tail');
+                if (tailObj) {
+                    tailObj.rotation.z = Math.sin(clock.elapsedTime * 12.0) * 0.42;
+                }
+
+                if (!gameState.isGrounded) {
+                    // В прыжке персонаж делает ровно ОДИН стильный оборот на 360 градусов вперёд
+                    if (gameState.jumpSpinAngle < Math.PI * 2) {
+                        gameState.jumpSpinAngle = Math.min(Math.PI * 2, gameState.jumpSpinAngle + gameState.jumpSpinSpeed * dt);
+                    }
+                    // Когда оборот 360° завершён (2*PI), нормализуем угол обратно к Math.PI, чтобы при приземлении НЕ было обратного раскручивания!
+                    const spinOffset = gameState.jumpSpinAngle >= Math.PI * 2 ? 0 : gameState.jumpSpinAngle;
+                    coreMesh.rotation.y = Math.PI + spinOffset;
+                    coreMesh.rotation.x = THREE.MathUtils.lerp(coreMesh.rotation.x, -gameState.vy * 0.025, dt * 10);
+                    coreMesh.rotation.z = THREE.MathUtils.lerp(coreMesh.rotation.z, -dx * 2.5, dt * 10);
+                } else {
+                    // Если приземлились чуть раньше (например, после Слэма вниз), докручиваем остаток оборота только вперёд без рывка назад
+                    if (gameState.jumpSpinAngle > 0 && gameState.jumpSpinAngle < Math.PI * 2) {
+                        gameState.jumpSpinAngle = Math.min(Math.PI * 2, gameState.jumpSpinAngle + Math.PI * 5.0 * dt);
+                        const spinOffset = gameState.jumpSpinAngle >= Math.PI * 2 ? 0 : gameState.jumpSpinAngle;
+                        coreMesh.rotation.y = Math.PI + spinOffset;
+                    } else {
+                        gameState.jumpSpinAngle = 0;
+                        coreMesh.rotation.y = THREE.MathUtils.lerp(coreMesh.rotation.y, Math.PI - dx * 1.5, dt * 12);
+                    }
+                    const runBounce = Math.sin(clock.elapsedTime * 15.0) * 0.07;
+                    coreMesh.rotation.z = THREE.MathUtils.lerp(coreMesh.rotation.z, -dx * 2.8 + runBounce, dt * 12);
+                    coreMesh.rotation.x = THREE.MathUtils.lerp(coreMesh.rotation.x, Math.abs(runBounce) * 0.8, dt * 12);
+                }
+            }
+            if (secondaryAnimMesh) {
+                secondaryAnimMesh.rotation.y += dt * 3.2;
+            }
+            if (shieldBubbleMesh) {
+                shieldBubbleMesh.visible = (gameState.shieldTimer > 0 || gameState.overdriveTimer > 0);
+                shieldBubbleMesh.material.color.setHex(gameState.overdriveTimer > 0 ? 0xffaa00 : 0x00f3ff);
+                shieldBubbleMesh.rotation.y += dt * 2.2;
+            }
+
+            playerGroup.position.y += gameState.vy * dt;
+            if (!gameState.isGrounded) {
+                gameState.vy += gameState.gravity * dt;
+                if (playerGroup.position.y <= 1.0) {
+                    playerGroup.position.y = 1.0;
+                    gameState.vy = 0;
+                    gameState.isGrounded = true;
+                    gameState.jumpsRemaining = gameState.maxJumps;
+                    if (gameState.isSlamming) {
+                        gameState.isSlamming = false;
+                        triggerSlamShockwave();
+                    }
+                }
+            }
+
+            playerLight.position.set(playerGroup.position.x, playerGroup.position.y + 1.2, playerGroup.position.z);
+
+            trailSpawnAccumulator += dt;
+            if (trailSpawnAccumulator > (gameState.overdriveTimer > 0 ? 0.018 : 0.035)) {
+                trailSpawnAccumulator = 0;
+                spawnTrailParticle();
+            }
+
+            // Обновляем изгиб виляющей дороги и бортиков
+            updateWindingTrackGeometry(effectiveSpeed, dt);
+
+            sceneryItems.forEach(item => {
+                item.position.z += effectiveSpeed * dt;
+                if (item.userData.spin) item.rotation.y += dt * 1.5;
+                if (item.position.z > 16) item.position.z -= 16 * 14;
+                item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                item.position.y = getTrackCurveY(item.position.z);
+            });
+
+            gameState.nextSpawnZ += effectiveSpeed * dt;
+            while (gameState.nextSpawnZ > -150) {
+                createObstacleRow(gameState.nextSpawnZ);
+                const gap = Math.max(diff.minGap, diff.baseGap - (gameState.speed - gameState.baseSpeed) * 0.25);
+                gameState.nextSpawnZ -= gap;
+            }
+
+            const hitboxScale = diff.hitboxForgiveness;
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.position.z += effectiveSpeed * dt;
+
+                if (obs.userData.type === 'drone') {
+                    obs.userData.baseX += obs.userData.vx * dt;
+                    obs.children[0].rotation.y += dt * 4;
+                    if (obs.userData.baseX > LANE_WIDTH) {
+                        obs.userData.baseX = LANE_WIDTH;
+                        obs.userData.vx *= -1;
+                    } else if (obs.userData.baseX < -LANE_WIDTH) {
+                        obs.userData.baseX = -LANE_WIDTH;
+                        obs.userData.vx *= -1;
+                    }
+                }
+
+                // Смещаем препятствие вдоль виляющей дороги
+                obs.position.x = obs.userData.baseX + getTrackCurveX(obs.position.z);
+                obs.position.y = obs.userData.baseY + getTrackCurveY(obs.position.z);
+
+                const dz = Math.abs(obs.position.z - playerGroup.position.z);
+                const dxObs = Math.abs(obs.position.x - playerGroup.position.x);
+
+                // Точная проверка коллизий с учётом верха и низа по оси Y
+                const hitZ = (obs.userData.depth * 0.5 + 0.45) * hitboxScale;
+                const hitX = (obs.userData.width * 0.5 + 0.4) * hitboxScale;
+                const playerBottom = playerGroup.position.y - 0.72;
+                const playerTop = playerGroup.position.y + 0.72;
+                const obsBottom = obs.userData.type === 'drone' ? 0.35 : 0;
+                const obsTop = obs.userData.height * hitboxScale;
+
+                if (dz < hitZ && dxObs < hitX && playerBottom < obsTop && playerTop > obsBottom) {
+                    if (gameState.shieldTimer > 0 || gameState.boostTimer > 0 || gameState.overdriveTimer > 0 || gameState.invulnTimer > 0) {
+                        if (gameState.shieldTimer > 0 && gameState.boostTimer <= 0 && gameState.overdriveTimer <= 0 && gameState.invulnTimer <= 0) {
+                            gameState.shieldTimer = 0;
+                            createFloatingText('ЩИТ ОТРАЗИЛ УДАР!', 'text-cyan-300');
+                        }
+                        sound.playHit();
+                        gameState.cameraShake = 0.3;
+                        spawnExplosion(obs.position, 0x00f3ff, 20, 1.2);
+                        scene.remove(obs);
+                        disposeObject3D(obs);
+                        obstacles.splice(i, 1);
+                        continue;
+                    } else {
+                        gameState.hearts--;
+                        renderHeartsHUD();
+
+                        if (gameState.hearts > 0) {
+                            sound.playHit();
+                            gameState.invulnTimer = 2.6;
+                            gameState.cameraShake = 0.5;
+                            gameState.speed = Math.max(gameState.baseSpeed, gameState.speed * 0.82);
+                            spawnExplosion(obs.position, 0xff0055, 26, 1.3);
+                            createFloatingText(`❤️ ОСТАЛОСЬ ЖИЗНЕЙ: ${gameState.hearts}!`, 'text-rose-400');
+                            scene.remove(obs);
+                            disposeObject3D(obs);
+                            obstacles.splice(i, 1);
+                            continue;
+                        } else {
+                            triggerGameOver();
+                            return;
+                        }
+                    }
+                } else if (!obs.userData.nearMissed && obs.position.z > 0.6 && obs.position.z < 4.5) {
+                    // Залипательная механика «Близкий промах» (Near Miss) — пролёт на грани!
+                    if (dxObs < hitX + 1.15 && playerBottom < obsTop + 0.5) {
+                        obs.userData.nearMissed = true;
+                        const nearPts = Math.round(45 * diff.scoreMult);
+                        gameState.score += nearPts;
+                        addOverdriveCharge(14);
+                        sound.playNearMiss();
+                        spawnExplosion(playerGroup.position, 0x00ffcc, 6, 0.5);
+                        createFloatingText(`⚡ НА ГРАНИ! +${nearPts}`, 'text-cyan-300');
+                    }
+                }
+
+                if (obs.position.z > 14) {
+                    scene.remove(obs);
+                    disposeObject3D(obs);
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            const hasPassiveMagnet = (perk === 'auto_magnet' || perk === 'supernova_ultimate');
+
+            for (let i = collectibles.length - 1; i >= 0; i--) {
+                const item = collectibles[i];
+                item.position.z += effectiveSpeed * dt;
+
+                if (item.userData.type === 'crystal') {
+                    item.rotation.y += dt * 3.5;
+
+                    const magnetRange = (gameState.magnetTimer > 0 || gameState.overdriveTimer > 0) ? 32 : (hasPassiveMagnet ? 15 : 0);
+                    if (item.userData.magnetized || (magnetRange > 0 && item.position.z > -magnetRange && item.position.z < 5)) {
+                        item.userData.magnetized = true;
+                        item.position.x = THREE.MathUtils.lerp(item.position.x, playerGroup.position.x, dt * 12);
+                        item.position.y = THREE.MathUtils.lerp(item.position.y, playerGroup.position.y, dt * 12);
+                    } else {
+                        item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                        item.position.y = item.userData.baseY + getTrackCurveY(item.position.z);
+                    }
+
+                    const dist = item.position.distanceTo(playerGroup.position);
+                    if (dist < 1.65) {
+                        const crystalGain = perk === 'double_crystals' ? 2 : 1;
+                        gameState.runCrystals += crystalGain;
+                        gameState.comboCount++;
+                        gameState.comboTimer = 4.0;
+                        addOverdriveCharge(4.5);
+
+                        if (gameState.comboCount >= 15) gameState.comboMultiplier = 5;
+                        else if (gameState.comboCount >= 8) gameState.comboMultiplier = 3;
+                        else if (gameState.comboCount >= 4) gameState.comboMultiplier = 2;
+                        else gameState.comboMultiplier = 1;
+
+                        const crystalBonusMult = perk === 'crystal_score_15' ? 1.15 : 1.0;
+                        const pts = Math.round(15 * gameState.comboMultiplier * diff.scoreMult * crystalBonusMult * overdriveScoreMult);
+                        gameState.score += pts;
+
+                        sound.playCrystal(gameState.comboCount);
+                        spawnExplosion(item.position, 0xffdd00, 7, 0.6);
+                        createFloatingText(crystalGain > 1 ? `+${pts} (x2 💎)` : `+${pts}`, 'text-yellow-300');
+
+                        const badge = document.getElementById('combo-badge');
+                        badge.classList.add('scale-110');
+                        setTimeout(() => badge.classList.remove('scale-110'), 120);
+
+                        scene.remove(item);
+                        disposeObject3D(item);
+                        collectibles.splice(i, 1);
+                        continue;
+                    }
+                } else if (item.userData.type === 'boost_pad') {
+                    item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                    item.position.y = item.userData.baseY + getTrackCurveY(item.position.z);
+                    const dz = Math.abs(item.position.z - playerGroup.position.z);
+                    const dxPad = Math.abs(item.position.x - playerGroup.position.x);
+                    if (!item.userData.triggered && dz < 2.0 && dxPad < 1.3 && playerGroup.position.y < 1.7) {
+                        item.userData.triggered = true;
+                        const extraBoost = perk === 'boost_shield_plus' ? 1.8 : 0;
+                        gameState.boostTimer = 3.2 + extraBoost;
+                        gameState.score += 100;
+                        addOverdriveCharge(20);
+                        sound.playPowerup();
+                        createFloatingText('ТУРБО-РЫВОК +100!', 'text-emerald-400');
+                    }
+                } else if (item.userData.type === 'shield' || item.userData.type === 'magnet' || item.userData.type === 'heart') {
+                    item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                    item.position.y = item.userData.baseY + getTrackCurveY(item.position.z);
+                    item.rotation.y += dt * 3;
+                    item.rotation.x += dt * 2;
+                    const dist = item.position.distanceTo(playerGroup.position);
+                    if (dist < 1.75) {
+                        if (item.userData.type === 'shield') {
+                            sound.playPowerup();
+                            const extraShield = perk === 'boost_shield_plus' ? 4.0 : 0;
+                            gameState.shieldTimer = diff.shieldDur + extraShield;
+                            createFloatingText('ЭНЕРГО-ЩИТ АКТИВЕН!', 'text-cyan-300');
+                            spawnExplosion(item.position, 0x00f3ff, 15, 0.8);
+                        } else if (item.userData.type === 'magnet') {
+                            sound.playPowerup();
+                            gameState.magnetTimer = diff.magnetDur;
+                            createFloatingText('МАГНИТ КРИСТАЛЛОВ!', 'text-pink-400');
+                            spawnExplosion(item.position, 0xff00a0, 15, 0.8);
+                        } else if (item.userData.type === 'heart') {
+                            sound.playHeal();
+                            if (gameState.hearts < gameState.maxHearts) {
+                                gameState.hearts++;
+                                renderHeartsHUD();
+                                createFloatingText('💚 +1 ЖИЗНЬ ВОССТАНОВЛЕНА!', 'text-emerald-300');
+                            } else {
+                                gameState.score += 150;
+                                createFloatingText('💚 ПОЛНЫЕ ЖИЗНИ +150 ОЧКОВ!', 'text-emerald-300');
+                            }
+                            spawnExplosion(item.position, 0x00ff66, 16, 0.9);
+                        }
+                        scene.remove(item);
+                        disposeObject3D(item);
+                        collectibles.splice(i, 1);
+                        continue;
+                    }
+                }
+
+                if (item.position.z > 14) {
+                    scene.remove(item);
+                    disposeObject3D(item);
+                    collectibles.splice(i, 1);
+                }
+            }
+
+            updateParticles(dt);
+            updateHUD();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const dt = Math.min(clock.getDelta(), 0.1);
+            updateGame(dt);
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        window.onload = function () {
+            showMainMenu();
+            animate();
+        };
+    </script>
+</body>
+</html>
