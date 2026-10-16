@@ -293,7 +293,7 @@
             <div class="w-full flex flex-col sm:flex-row justify-between items-center gap-2 border-b border-cyan-500/30 pb-3">
                 <div class="text-center sm:text-left">
                     <div class="inline-block px-2.5 py-0.5 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-[10px] font-bold tracking-widest uppercase">
-                        Версия 2.8 • Плеер 5 Треков • Живая Архитектура
+                        Версия 3.0 • Мега-Трамплины • Небесные Кольца • Второй Шанс
                     </div>
                     <h1 class="text-2xl md:text-3xl font-cyber text-white neon-text-cyan tracking-wide mt-0.5">
                         КИБЕР-СФЕРА 3D: НЕОНОВЫЙ РЫВОК
@@ -535,9 +535,20 @@
                 </div>
             </div>
 
+            <!-- БЛОК «ВТОРОЙ ШАНС» (Мгновенное продолжение с места столкновения) -->
+            <div id="revive-container" class="w-full">
+                <button id="btn-revive" class="w-full py-3.5 px-5 rounded-2xl font-cyber text-slate-950 text-sm md:text-base bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 hover:brightness-110 active:scale-95 transition shadow-[0_0_22px_rgba(16,185,129,0.6)] flex items-center justify-center gap-2 cursor-pointer animate-pulse">
+                    <i class="fa-solid fa-bolt-lightning text-lg"></i>
+                    <span id="revive-btn-text">ВТОРОЙ ШАНС! ПРОДОЛЖИТЬ</span>
+                </button>
+                <div class="text-[10px] text-emerald-300 mt-1 font-semibold">
+                    Восстановит все ❤️ жизни + 4 сек неуязвимого щита с этой же точки!
+                </div>
+            </div>
+
             <div class="flex flex-col sm:flex-row gap-2.5 w-full">
                 <button id="btn-retry" class="neon-btn flex-1 py-3.5 px-5 rounded-2xl font-cyber text-slate-950 text-base md:text-lg flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-rotate-right"></i> ЕЩЁ РАЗ!
+                    <i class="fa-solid fa-rotate-right"></i> СНАЧАЛА
                 </button>
                 <button id="btn-go-shop" class="neon-btn neon-btn-pink py-3.5 px-5 rounded-2xl font-cyber text-white text-base flex items-center justify-center gap-2 cursor-pointer">
                     <i class="fa-solid fa-robot"></i> ГАРАЖ
@@ -2576,7 +2587,8 @@
             overdriveTimer: 0,
             currentZoneIndex: 0,
             nextSpawnZ: -45,
-            cameraShake: 0
+            cameraShake: 0,
+            usedSecondChance: false
         };
 
         const obstacles = [];
@@ -2604,13 +2616,13 @@
         }
 
         // ==========================================
-        // 9. СПАВН ПРЕПЯТСТВИЙ, КРИСТАЛЛОВ И АПТЕЧЕК
+        // 9. СПАВН ПРЕПЯТСТВИЙ, КРИСТАЛЛОВ, ТРАМПЛИНОВ И АПТЕЧЕК
         // ==========================================
         function createObstacleRow(zPos) {
             const diff = DIFFICULTIES[playerData.selectedDifficulty] || DIFFICULTIES.chill;
             const patternRoll = Math.random();
 
-            if (patternRoll < 0.35) {
+            if (patternRoll < 0.30) {
                 const freeLane = Math.floor(Math.random() * 3);
                 for (let lane = 0; lane < 3; lane++) {
                     if (lane === freeLane) {
@@ -2628,24 +2640,37 @@
                         }
                     }
                 }
-            } else if (patternRoll < 0.65) {
+            } else if (patternRoll < 0.54) {
                 const count = diff.id === 'chill' ? (Math.random() < 0.65 ? 1 : 2) : (Math.random() < 0.5 ? 2 : 3);
                 const lanesOrder = [0, 1, 2].sort(() => Math.random() - 0.5);
                 for (let i = 0; i < count; i++) {
                     spawnSingleObstacle('low_laser', lanesOrder[i], zPos);
                     if (i === 0) spawnCrystalArc(lanesOrder[i], zPos);
                 }
-            } else if (patternRoll < 0.85) {
+            } else if (patternRoll < 0.72) {
                 const startLane = Math.floor(Math.random() * 3);
                 spawnSingleObstacle('drone', startLane, zPos);
                 const crystalLane = (startLane + 1) % 3;
                 spawnCrystalLine(crystalLane, zPos);
+            } else if (patternRoll < 0.87) {
+                // НЕОНОВЫЙ МЕГА-ТРАМПЛИН + Высокая воздушная дуга с Небесным Кольцом и Мега-Кристаллом!
+                const jumpLane = Math.floor(Math.random() * 3);
+                spawnJumpPad(jumpLane, zPos);
+                spawnHighJumpArc(jumpLane, zPos - 10);
+                const blockLane = (jumpLane + 1) % 3;
+                spawnSingleObstacle('high_block', blockLane, zPos - 6);
             } else {
                 const boostLane = Math.floor(Math.random() * 3);
                 spawnBoostPad(boostLane, zPos);
                 spawnCrystalLine(boostLane, zPos - 4);
                 const blockLane = (boostLane + 1) % 3;
                 spawnSingleObstacle('high_block', blockLane, zPos);
+            }
+
+            // Шанс появления Небесного Кольца с Радужным Мега-Кристаллом для двойного прыжка!
+            if (patternRoll < 0.72 && Math.random() < 0.28) {
+                const skyLane = Math.floor(Math.random() * 3);
+                spawnSkyRingWithMegaCrystal(skyLane, zPos - 5, 3.3);
             }
 
             // Бонусы и зелёные Сердечки-аптечки
@@ -2775,10 +2800,122 @@
             collectibles.push(pad);
         }
 
+        // Неоновый Мега-Трамплин (Jump Pad), подбрасывающий игрока высоко в небо!
+        function spawnJumpPad(laneIndex, zPos) {
+            const xPos = LANES[laneIndex];
+            const group = new THREE.Group();
+
+            const base = new THREE.Mesh(
+                new THREE.CylinderGeometry(1.15, 1.35, 0.22, 16),
+                new THREE.MeshStandardMaterial({ color: 0x181038, roughness: 0.3, metalness: 0.7 })
+            );
+            base.position.y = 0.11;
+            group.add(base);
+
+            const glowPad = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.95, 1.05, 0.26, 16),
+                new THREE.MeshBasicMaterial({ color: 0x00f3ff })
+            );
+            glowPad.position.y = 0.14;
+            group.add(glowPad);
+
+            // Два парящих голографических кольца-стрелки над трамплином
+            const ring1 = new THREE.Mesh(
+                new THREE.TorusGeometry(0.88, 0.07, 8, 20),
+                new THREE.MeshBasicMaterial({ color: 0xff00a0 })
+            );
+            ring1.rotation.x = Math.PI / 2;
+            ring1.position.y = 0.45;
+            group.add(ring1);
+
+            const ring2 = new THREE.Mesh(
+                new THREE.TorusGeometry(0.62, 0.06, 8, 20),
+                new THREE.MeshBasicMaterial({ color: 0xffdd00 })
+            );
+            ring2.rotation.x = Math.PI / 2;
+            ring2.position.y = 0.82;
+            group.add(ring2);
+
+            group.position.set(xPos + getTrackCurveX(zPos), getTrackCurveY(zPos), zPos);
+            group.userData = { type: 'jump_pad', baseX: xPos, baseY: 0.0, triggered: false };
+            scene.add(group);
+            collectibles.push(group);
+        }
+
+        // Небесное Кольцо (Sky Ring) и Радужный Мега-Кристалл (+10 💎) в воздухе
+        function spawnSkyRingWithMegaCrystal(laneIndex, zPos, heightY = 3.3) {
+            const xPos = LANES[laneIndex];
+
+            // 1. Светящееся Небесное Кольцо, сквозь которое можно пролететь в прыжке
+            const ringGroup = new THREE.Group();
+            const outerRing = new THREE.Mesh(
+                new THREE.TorusGeometry(1.45, 0.12, 10, 28),
+                new THREE.MeshBasicMaterial({ color: 0x00f3ff })
+            );
+            const innerRing = new THREE.Mesh(
+                new THREE.TorusGeometry(1.22, 0.06, 8, 24),
+                new THREE.MeshBasicMaterial({ color: 0xffdd00 })
+            );
+            ringGroup.add(outerRing, innerRing);
+            ringGroup.position.set(xPos + getTrackCurveX(zPos), heightY + getTrackCurveY(zPos), zPos);
+            ringGroup.userData = { type: 'sky_ring', baseX: xPos, baseY: heightY, triggered: false };
+            scene.add(ringGroup);
+            collectibles.push(ringGroup);
+
+            // 2. Внутри кольца парит редкий Радужный Мега-Кристалл (+10 💎)
+            spawnMegaCrystal(xPos, heightY, zPos);
+        }
+
+        function spawnMegaCrystal(x, y, z) {
+            const group = new THREE.Group();
+            const gem = new THREE.Mesh(
+                new THREE.OctahedronGeometry(0.82, 0),
+                new THREE.MeshStandardMaterial({
+                    color: 0xff00a0,
+                    emissive: 0xff0066,
+                    emissiveIntensity: 0.95,
+                    roughness: 0.08,
+                    metalness: 0.9,
+                    flatShading: true
+                })
+            );
+            group.add(gem);
+
+            const halo = new THREE.Mesh(
+                new THREE.TorusGeometry(0.95, 0.07, 8, 20),
+                new THREE.MeshBasicMaterial({ color: 0x00f3ff })
+            );
+            group.add(halo);
+
+            group.position.set(x + getTrackCurveX(z), y + getTrackCurveY(z), z);
+            group.userData = { type: 'mega_crystal', baseX: x, baseY: y, magnetized: false };
+            scene.add(group);
+            collectibles.push(group);
+        }
+
+        function spawnHighJumpArc(laneIndex, zCenter) {
+            const xPos = LANES[laneIndex];
+            const arcPoints = [
+                { dz: 6.5, y: 2.2 },
+                { dz: 3.2, y: 3.8 },
+                { dz: -3.2, y: 3.8 },
+                { dz: -6.5, y: 2.2 }
+            ];
+            arcPoints.forEach(pt => {
+                spawnSingleCrystal(xPos, pt.y, zCenter + pt.dz);
+            });
+            // На самой вершине высокой параболы ставим Небесное Кольцо с Мега-Кристаллом!
+            spawnSkyRingWithMegaCrystal(laneIndex, zCenter, 4.6);
+        }
+
         function spawnCrystalLine(laneIndex, zStart) {
             const xPos = LANES[laneIndex];
             for (let i = 0; i < 4; i++) {
-                spawnSingleCrystal(xPos, 1.0, zStart - i * 3.0);
+                if (i === 2 && Math.random() < 0.14) {
+                    spawnMegaCrystal(xPos, 1.2, zStart - i * 3.0);
+                } else {
+                    spawnSingleCrystal(xPos, 1.0, zStart - i * 3.0);
+                }
             }
         }
 
@@ -3062,9 +3199,9 @@
                 }
             }
 
-            // Притягиваем ближайшие кристаллы ударной волной
+            // Притягиваем ближайшие кристаллы и мега-кристаллы ударной волной
             collectibles.forEach(item => {
-                if (item.userData.type === 'crystal' && Math.abs(item.position.z) < 16) {
+                if ((item.userData.type === 'crystal' || item.userData.type === 'mega_crystal') && Math.abs(item.position.z) < 18) {
                     item.userData.magnetized = true;
                 }
             });
@@ -3194,6 +3331,7 @@
             gameState.overdriveTimer = 0;
             gameState.currentZoneIndex = playerData.selectedStartZone || 0;
             gameState.nextSpawnZ = -48;
+            gameState.usedSecondChance = false;
 
             playerGroup.position.set(0, 1.0, 0);
             playerGroup.visible = true;
@@ -3242,7 +3380,11 @@
             spawnExplosion(playerGroup.position, skin.color, 35, 1.5);
             playerGroup.visible = false;
 
+            // Сохраняем собранные за этот отрезок кристаллы в копилку и обнуляем буфер, чтобы не дублировать при «Втором шансе»
             playerData.crystals += gameState.runCrystals;
+            const totalRunCrystalsShown = gameState.runCrystals;
+            gameState.runCrystals = 0;
+
             const finalScore = Math.floor(gameState.score);
             const isNewRecord = finalScore > playerData.highScore;
             if (isNewRecord) {
@@ -3252,8 +3394,21 @@
 
             document.getElementById('go-score').innerText = finalScore;
             document.getElementById('go-dist').innerText = Math.floor(gameState.distance);
-            document.getElementById('go-crystals').innerText = gameState.runCrystals;
+            document.getElementById('go-crystals').innerText = totalRunCrystalsShown;
             document.getElementById('new-record-badge').classList.toggle('hidden', !isNewRecord);
+
+            // Настройка кнопки «Второй шанс» (доступно 1 раз за забег)
+            const reviveContainer = document.getElementById('revive-container');
+            const reviveBtnText = document.getElementById('revive-btn-text');
+            if (!gameState.usedSecondChance) {
+                reviveContainer.classList.remove('hidden');
+                const reviveCost = playerData.crystals >= 25 ? 25 : 0;
+                reviveBtnText.innerText = reviveCost > 0
+                    ? `⚡ ВТОРОЙ ШАНС! ПРОДОЛЖИТЬ (${reviveCost} 💎)`
+                    : `⚡ ВТОРОЙ ШАНС! ПРОДОЛЖИТЬ (БЕСПЛАТНО!)`;
+            } else {
+                reviveContainer.classList.add('hidden');
+            }
 
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('touch-controls').classList.add('hidden');
@@ -3261,6 +3416,52 @@
             setTimeout(() => {
                 document.getElementById('gameover-modal').classList.remove('hidden');
             }, 600);
+        }
+
+        // Механика «Второй шанс» — продолжение забега с места столкновения!
+        function reviveGame() {
+            if (gameState.usedSecondChance) return;
+            sound.init();
+
+            const reviveCost = playerData.crystals >= 25 ? 25 : 0;
+            if (reviveCost > 0) {
+                playerData.crystals -= reviveCost;
+                saveData();
+            }
+
+            gameState.usedSecondChance = true;
+            gameState.hearts = gameState.maxHearts;
+            gameState.shieldTimer = 4.5;
+            gameState.invulnTimer = 3.0;
+            gameState.vy = 0;
+            gameState.isGrounded = true;
+            gameState.isSlamming = false;
+            gameState.jumpsRemaining = gameState.maxJumps;
+
+            // Расчищаем все препятствия поблизости, чтобы старт был безопасным и эффектным
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                if (obstacles[i].position.z > -65) {
+                    spawnExplosion(obstacles[i].position, 0x00f3ff, 12, 1.0);
+                    scene.remove(obstacles[i]);
+                    disposeObject3D(obstacles[i]);
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            playerGroup.position.y = 1.0;
+            playerGroup.visible = true;
+            renderHeartsHUD();
+            sound.playPowerup();
+            clock.getDelta();
+
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('touch-controls').classList.remove('hidden');
+
+            gameState.status = 'PLAYING';
+            spawnJumpRingBurst(playerGroup.position, 0x00ff88);
+            createFloatingText('⚡ ВТОРОЙ ШАНС АКТИВИРОВАН! ВПЕРЁД! ⚡', 'text-emerald-300');
+            updateHUD();
         }
 
         function updateMenuUI() {
@@ -3508,6 +3709,7 @@
 
         document.getElementById('btn-start').addEventListener('click', startGame);
         document.getElementById('btn-retry').addEventListener('click', startGame);
+        document.getElementById('btn-revive').addEventListener('click', reviveGame);
         document.getElementById('btn-open-shop').addEventListener('click', openShop);
         document.getElementById('btn-go-shop').addEventListener('click', openShop);
         document.getElementById('btn-close-shop').addEventListener('click', closeShop);
@@ -3929,6 +4131,92 @@
                         disposeObject3D(item);
                         collectibles.splice(i, 1);
                         continue;
+                    }
+                } else if (item.userData.type === 'mega_crystal') {
+                    // Радужный Мега-Кристалл (+10 💎 и мощный заряд Гипер-Драйва!)
+                    item.rotation.y += dt * 4.5;
+                    if (item.children[1]) item.children[1].rotation.x += dt * 5.0;
+
+                    const magnetRange = (gameState.magnetTimer > 0 || gameState.overdriveTimer > 0) ? 34 : (hasPassiveMagnet ? 16 : 0);
+                    if (item.userData.magnetized || (magnetRange > 0 && item.position.z > -magnetRange && item.position.z < 5)) {
+                        item.userData.magnetized = true;
+                        item.position.x = THREE.MathUtils.lerp(item.position.x, playerGroup.position.x, dt * 12);
+                        item.position.y = THREE.MathUtils.lerp(item.position.y, playerGroup.position.y, dt * 12);
+                    } else {
+                        item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                        item.position.y = item.userData.baseY + getTrackCurveY(item.position.z);
+                    }
+
+                    const dist = item.position.distanceTo(playerGroup.position);
+                    if (dist < 1.95) {
+                        const baseMega = 10;
+                        const megaGain = perk === 'double_crystals' ? baseMega * 2 : baseMega;
+                        gameState.runCrystals += megaGain;
+                        gameState.comboCount += 3;
+                        gameState.comboTimer = 4.0;
+                        addOverdriveCharge(25);
+
+                        if (gameState.comboCount >= 15) gameState.comboMultiplier = 5;
+                        else if (gameState.comboCount >= 8) gameState.comboMultiplier = 3;
+                        else if (gameState.comboCount >= 4) gameState.comboMultiplier = 2;
+
+                        const pts = Math.round(200 * diff.scoreMult * overdriveScoreMult);
+                        gameState.score += pts;
+
+                        sound.playPowerup();
+                        spawnJumpRingBurst(item.position, 0xff00a0);
+                        spawnExplosion(item.position, 0xff00a0, 18, 1.0);
+                        createFloatingText(`💎 МЕГА-КРИСТАЛЛ +${megaGain} 💎 (+${pts})!`, 'text-pink-300');
+
+                        scene.remove(item);
+                        disposeObject3D(item);
+                        collectibles.splice(i, 1);
+                        continue;
+                    }
+                } else if (item.userData.type === 'sky_ring') {
+                    // Небесное Кольцо в воздухе — награждает за точный высокий прыжок сквозь кольцо!
+                    item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                    item.position.y = item.userData.baseY + getTrackCurveY(item.position.z);
+                    item.rotation.z += dt * 2.5;
+
+                    const dz = Math.abs(item.position.z - playerGroup.position.z);
+                    const dxRing = Math.abs(item.position.x - playerGroup.position.x);
+                    const dyRing = Math.abs((item.userData.baseY) - playerGroup.position.y);
+                    if (!item.userData.triggered && dz < 1.8 && dxRing < 1.65 && dyRing < 1.75) {
+                        item.userData.triggered = true;
+                        const ringPts = Math.round(150 * diff.scoreMult * overdriveScoreMult);
+                        gameState.score += ringPts;
+                        gameState.boostTimer = Math.max(gameState.boostTimer, 2.2);
+                        addOverdriveCharge(20);
+                        sound.playPowerup();
+                        spawnJumpRingBurst(playerGroup.position, 0x00f3ff);
+                        spawnExplosion(playerGroup.position, 0x00ffcc, 16, 0.9);
+                        createFloatingText(`🌟 НЕБЕСНОЕ КОЛЬЦО +${ringPts}!`, 'text-cyan-300');
+                    }
+                } else if (item.userData.type === 'jump_pad') {
+                    // Неоновый Мега-Трамплин на дороге — подбрасывает высоко в воздух с пируэтом!
+                    item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
+                    item.position.y = item.userData.baseY + getTrackCurveY(item.position.z);
+                    if (item.children[2]) item.children[2].position.y = 0.45 + Math.sin(clock.elapsedTime * 8) * 0.1;
+                    if (item.children[3]) item.children[3].position.y = 0.82 + Math.cos(clock.elapsedTime * 8) * 0.1;
+
+                    const dz = Math.abs(item.position.z - playerGroup.position.z);
+                    const dxPad = Math.abs(item.position.x - playerGroup.position.x);
+                    if (!item.userData.triggered && dz < 1.95 && dxPad < 1.35 && playerGroup.position.y < 2.0) {
+                        item.userData.triggered = true;
+                        gameState.vy = 23.5; // Высокий полёт по дуге к Небесному Кольцу!
+                        gameState.isGrounded = false;
+                        gameState.isSlamming = false;
+                        gameState.jumpsRemaining = gameState.maxJumps;
+                        gameState.jumpSpinAngle = 0;
+                        gameState.jumpSpinSpeed = Math.PI * 2.4;
+                        gameState.score += 120;
+                        addOverdriveCharge(18);
+                        sound.playJump(true);
+                        spawnJumpRingBurst(playerGroup.position, 0x00f3ff);
+                        spawnJumpRingBurst(playerGroup.position, 0xff00a0);
+                        spawnExplosion(playerGroup.position, 0x00f3ff, 18, 1.0);
+                        createFloatingText('🚀 МЕГА-ТРАМПЛИН +120!', 'text-cyan-300');
                     }
                 } else if (item.userData.type === 'boost_pad') {
                     item.position.x = item.userData.baseX + getTrackCurveX(item.position.z);
